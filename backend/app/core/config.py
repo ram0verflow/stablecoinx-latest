@@ -89,6 +89,20 @@ class Settings(BaseSettings):  # FIXED: C3
     BEECEPTOR_BASE_URL: str = Field("")
     BEECEPTOR_TIMEOUT_SECONDS: float = 5.0
 
+    # n8n operations automation — fires payment.blocked / manual_review_required /
+    # settlement.executed events at a webhook so n8n can orchestrate email/ops
+    # alerts. Empty by default so this is a no-op until configured.
+    N8N_WEBHOOK_URL: str = Field("")
+    N8N_WEBHOOK_TIMEOUT_SECONDS: float = 5.0
+
+    # Obfuscation Intelligence external attribution provider — "none" (default,
+    # provider_attribution.status = "not_configured") or "beeceptor". Beeceptor
+    # here is a mock external attribution source, NOT the classifier and NOT
+    # ground truth — see app/services/obfuscation/provider_attribution.py.
+    OBFUSCATION_PROVIDER_MODE: str = Field("none")
+    BEECEPTOR_OBFUSCATION_URL: str = Field("")
+    BEECEPTOR_OBFUSCATION_TIMEOUT_SECONDS: float = 5.0
+
     model_config = {  # FIXED: C3
         "env_file": (".env", "../.env"),  # FIXED: C3
         "env_file_encoding": "utf-8",  # FIXED: C3

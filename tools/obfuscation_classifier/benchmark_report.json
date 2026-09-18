@@ -1,0 +1,267 @@
+{
+  "generated_at": "2026-09-18T18:31:18.289826+00:00",
+  "claim": "StableCoinX performs protocol-aware Whirlpool-style CoinJoin identification from transaction structure. This is identification, not unmixing, not user attribution, and not illicit attribution.",
+  "total_cases_in_file": 25,
+  "skipped_todo_cases": 2,
+  "total_runnable_cases": 20,
+  "error_cases": 3,
+  "correct_count": 20,
+  "incorrect_count": 0,
+  "whirlpool_positive_detection": {
+    "true_positives": 16,
+    "false_positives": 0,
+    "false_negatives": 1,
+    "true_negatives": 3,
+    "precision": 1.0,
+    "recall": 0.9412
+  },
+  "confusion_expected_family_vs_predicted_protocol": {
+    "WHIRLPOOL_LEGACY": {
+      "WHIRLPOOL_LEGACY": 16,
+      "UNKNOWN": 1
+    },
+    "UNKNOWN": {
+      "UNKNOWN": 3
+    }
+  },
+  "rows": [
+    {
+      "txid": "5553386e94b07112fb7b6789cae2f89f380ca20a28935812c51f0f3387bd5243",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "b8593dad70162185d070f86e00a208d334411114f749629869a8d6ffe9162087",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "a2ab708ed6fffdb060ef77fe52621e9858e5dd748c1d7bf6614c9740539731bb",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "60772fe32eb6dd9f8e0a862ff1673f45f1832780b538ea6ebf8be3062a1fc939",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "afd18a401a3613e9afd0c283d0b4e032157ff130f6a68d2e76d456b989e822d7",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "c03cf94b845573517ccef6308e40822ad8dab77bde9a52bf92c5bc55ead6ed09",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "f3307ae7ac761ed535a9af43a234cff708802c2b2ed937604039e3b0cfea34d0",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "779ac4a120049d10809a39d222f4d7381c3c0e94838c7cf6848d25fb36439ad6",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "298f304165a1003b8a745de810f82495da248bc68b4334eb94cf650d2c5acbbc",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "cb6a88ec222500543d25ce8a9fcbb35b4ac8d731637bf3217db0c0adfa7207eb",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "21908e0267eaa7ce458dfbcab68f0f1440bca65e8ed86b45ea117399e7e40aa8",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "49d812bf11f934674b85d6650f6eaeb52dd342bde524a6851d3225540ad8f823",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "1058aa5b89b9100ca4993b89c1c5109eafbe0e5671fd5f4567c7d4b5adb5a9ec",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "aba29cbb64aa0e95f5aa7b5dbbe861c977da3b4924dd39db835e7236a7bd2c20",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "1ea843fd94c1436cb828b661249e061bb6b44876ecf53fc0950b94601d77f397",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "51658d54e8a77412057a3e61664de6fc4c344d767ca6de5cc714875656b2d4bb",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "66b21ea5d1d8a1f4ec026cd5e3d6efa6abf513560d3a5a6068a50c35d1a1c66f",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "COINJOIN_LIKE",
+      "predicted_protocol": "UNKNOWN",
+      "predicted_classification": "COINJOIN_LIKE",
+      "confidence": 0.5,
+      "correct": true,
+      "outcome": "FN"
+    },
+    {
+      "txid": "dfe57d33a81720a059ceb5e84d546a05e55791b0eafca50574c9ed4c645ee575",
+      "category": "ordinary_payment_negative",
+      "expected_family": "UNKNOWN",
+      "expected_classification": "NOT_WHIRLPOOL",
+      "predicted_protocol": "UNKNOWN",
+      "predicted_classification": "NOT_WHIRLPOOL",
+      "confidence": 0.0,
+      "correct": true,
+      "outcome": "TN"
+    },
+    {
+      "txid": "4e624682a5b69dbd1596628eec644c0f4782ba798f2794f7177715395bca7b91",
+      "category": "batching_negative",
+      "expected_family": "UNKNOWN",
+      "expected_classification": "NOT_WHIRLPOOL",
+      "predicted_protocol": "UNKNOWN",
+      "predicted_classification": "NOT_WHIRLPOOL",
+      "confidence": 0.0,
+      "correct": true,
+      "outcome": "TN"
+    },
+    {
+      "txid": "2759143d93dc0bc29170eae07ad97a9c8931b60a7b673de04ac26d9764324a38",
+      "category": "consolidation_negative",
+      "expected_family": "UNKNOWN",
+      "expected_classification": "NOT_WHIRLPOOL",
+      "predicted_protocol": "UNKNOWN",
+      "predicted_classification": "NOT_WHIRLPOOL",
+      "confidence": 0.0,
+      "correct": true,
+      "outcome": "TN"
+    }
+  ],
+  "errors": [
+    {
+      "txid": "da9dffbda2b3158565667bca071ab4f438be84e7f313ba71a426fe6de4281cc5",
+      "category": "positive_whirlpool",
+      "error_message": "Both block explorer APIs failed. Blockstream: Rate limited by the block explorer API \u2014 try again shortly. mempool.space: Could not reach block explorer API: timed out."
+    },
+    {
+      "txid": "240fbc0a1f225e4266b86d351a099ae4fd28bbb2d628960fae11e5481a9d43d0",
+      "category": "positive_whirlpool",
+      "error_message": "Both block explorer APIs failed. Blockstream: Rate limited by the block explorer API \u2014 try again shortly. mempool.space: Could not reach block explorer API: timed out."
+    },
+    {
+      "txid": "8adc6ae3258c018036cc447230cc549097313ea4c9a1ec0ff22b97f0bbfd0fe5",
+      "category": "positive_whirlpool",
+      "error_message": "Both block explorer APIs failed. Blockstream: Rate limited by the block explorer API \u2014 try again shortly. mempool.space: Could not reach block explorer API: timed out."
+    }
+  ],
+  "SMALL_SAMPLE_WARNING": false
+}

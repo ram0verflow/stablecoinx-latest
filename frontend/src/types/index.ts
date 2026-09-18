@@ -266,3 +266,52 @@ export interface MonitoringStats {
   compliance_provider?: { name: string; configured: boolean };
   wallet_intelligence?: { provider: 'neo4j' | 'beeceptor'; status: boolean };
 }
+
+export interface ObfuscationEvidenceSignal {
+  name: string;
+  passed: boolean;
+  weight: number;
+  detail: string;
+}
+
+export interface ObfuscationProviderAttribution {
+  source: string;
+  status: string;
+  known_illicit_attribution?: boolean | null;
+  known_scam_exposure?: boolean | null;
+  known_sanctions_exposure?: boolean | null;
+  risk_score?: number | null;
+  freshness_seconds?: number | null;
+  reason?: string | null;
+}
+
+export interface ObfuscationAnalyzeResult {
+  txid: string;
+  classification: string;
+  protocol: string;
+  confidence: number;
+  obfuscation_confidence: string;
+  provenance_confidence: string;
+  illicit_attribution: string;
+  provider_attribution: ObfuscationProviderAttribution;
+  policy_recommendation: string;
+  policy_message: string;
+  evidence: ObfuscationEvidenceSignal[];
+  evidence_against: string[];
+  classification_hint?: string | null;
+  limits: string[];
+  source: 'cached_validation_fixture' | 'live_blockstream_fetch' | string;
+}
+
+export interface ObfuscationValidationSnapshot {
+  available: boolean;
+  generated_at?: string;
+  claim?: string;
+  total_runnable_cases?: number;
+  error_cases?: number;
+  correct_count?: number;
+  incorrect_count?: number;
+  precision?: number | null;
+  recall?: number | null;
+  small_sample_warning?: boolean;
+}

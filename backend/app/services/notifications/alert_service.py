@@ -14,6 +14,7 @@ from sqlalchemy import desc
 from app.models.alerts import Alert, AlertType
 from app.models.payment_intents import PaymentIntent
 from app.services.notifications.telegram_service import get_telegram_service
+from app.services.notifications import n8n_service
 
 logger = logging.getLogger(__name__)
 
@@ -113,17 +114,27 @@ class AlertService:
                 message=alert_message,
             )
             
+            enriched_payment_data = {
+                **payment_data,
+                "id": str(payment_id),
+            }
+
             # Send Telegram notification
             telegram_service = get_telegram_service()
             await telegram_service.send_notification(
                 alert_type=alert_type,
-                payment_data={
-                    **payment_data,
-                    "id": str(payment_id),
-                },
+                payment_data=enriched_payment_data,
                 extra_data=extra_data,
             )
-            
+
+            # Fire n8n operations-automation webhook (email routing lives in
+            # the n8n workflow, not here — see n8n_service.py)
+            n8n_service.send_event(
+                alert_type=alert_type,
+                payment_data=enriched_payment_data,
+                extra_data=extra_data,
+            )
+
             return True
             
         except Exception as e:

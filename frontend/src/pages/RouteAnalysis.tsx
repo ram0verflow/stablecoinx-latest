@@ -5,6 +5,8 @@ import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ToastProvider';
 import { getStatusTone, type Tone } from '../components/StatusBadge';
 import { IcArrowRight, IcLock, IcAlertCircle } from '../components/scx/icons';
+import { ObfuscationPanel } from '../components/ObfuscationPanel';
+import { getObfuscationDemoForPayment } from '../lib/obfuscationDemoPayments';
 
 interface PipelineStage { label: string; passed: boolean; status: string; detail: string }
 interface PaymentDetails {
@@ -53,6 +55,7 @@ export const RouteAnalysis: React.FC = () => {
   const [isPolling, setIsPolling] = useState(true);
   const [view, setView] = useState<'trace' | 'flow'>('trace');
   const [acting, setActing] = useState(false);
+  const obfuscationDemo = paymentId ? getObfuscationDemoForPayment(paymentId) : undefined;
 
   useEffect(() => {
     if (!paymentId) return;
@@ -215,6 +218,13 @@ export const RouteAnalysis: React.FC = () => {
             );
           })}
         </div>
+      )}
+
+      {view === 'trace' && obfuscationDemo && (
+        <>
+          <div className="sec-label" style={{ marginTop: 18 }}>Compliance & Risk — Obfuscation Intelligence</div>
+          <ObfuscationPanel mode="compact" defaultTxid={obfuscationDemo.txid} />
+        </>
       )}
 
       {view === 'flow' && (

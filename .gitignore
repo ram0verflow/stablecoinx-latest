@@ -20,6 +20,12 @@ venv/
 *.sqlite
 *.sqlite3
 
+# Local n8n instance data (runtime DB, credentials, cache) — never commit
+.n8n-local/
+
+# Ad-hoc Playwright verification scripts/screenshots — not part of the app
+frontend/.scratchshots/
+
 # Foundry build artifacts
 out/
 cache/

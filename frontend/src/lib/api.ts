@@ -6,6 +6,8 @@ import type {
   RouteAnalysis,
   Alert,
   MonitoringStats,
+  ObfuscationAnalyzeResult,
+  ObfuscationValidationSnapshot,
 } from '../types';
 import { getStoredToken, removeStoredAuth } from './authStorage'; // FIXED: A5
 import { useAuthStore } from '../store/authStore'; // FIXED: A5 — clear Zustand on 401
@@ -129,6 +131,13 @@ export const walletApi = {
   connect: (address: string) => api.post('/wallet/connect', { address }),
   balance: (address: string) => api.get(`/wallet/balance/${address}`),
   networkStatus: () => api.get('/wallet/network-status'),
+};
+
+export const obfuscationApi = {
+  analyze: (txid: string, chain: string = 'bitcoin') =>
+    api.post<ObfuscationAnalyzeResult>('/obfuscation/analyze', { txid, chain }),
+  demoTxids: () => api.get<{ txids: string[] }>('/obfuscation/demo-txids'),
+  validationSnapshot: () => api.get<ObfuscationValidationSnapshot>('/obfuscation/validation-snapshot'),
 };
 
 export default api;

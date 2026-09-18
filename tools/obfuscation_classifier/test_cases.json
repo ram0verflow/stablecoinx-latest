@@ -1,0 +1,221 @@
+[
+  {
+    "txid": "5553386e94b07112fb7b6789cae2f89f380ca20a28935812c51f0f3387bd5243",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "Public citation (Bitcoin StackExchange answer on detecting mixed transactions), per Phase 2 task instructions",
+    "source_url": null,
+    "notes": "Seed example given in the Phase 2 task spec; independently re-verified live via analyze_txid() during this phase (5 in / 5 out, 0.001 BTC denomination, scored CONFIRMED at confidence 1.0). Exact StackExchange thread URL not independently located/verified by the assistant."
+  },
+  {
+    "txid": "b8593dad70162185d070f86e00a208d334411114f749629869a8d6ffe9162087",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "Public citation (Samourai/KYCP article on Whirlpool CoinJoin examples), per Phase 2 task instructions",
+    "source_url": null,
+    "notes": "Seed example given in the Phase 2 task spec; independently re-verified live via analyze_txid() during this phase (5 in / 5 out, 0.05 BTC denomination, scored CONFIRMED at confidence 1.0). Exact Samourai/KYCP article URL not independently located/verified by the assistant."
+  },
+  {
+    "txid": "da9dffbda2b3158565667bca071ab4f438be84e7f313ba71a426fe6de4281cc5",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #1/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "a2ab708ed6fffdb060ef77fe52621e9858e5dd748c1d7bf6614c9740539731bb",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #2/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "60772fe32eb6dd9f8e0a862ff1673f45f1832780b538ea6ebf8be3062a1fc939",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #3/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "afd18a401a3613e9afd0c283d0b4e032157ff130f6a68d2e76d456b989e822d7",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #4/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "240fbc0a1f225e4266b86d351a099ae4fd28bbb2d628960fae11e5481a9d43d0",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #5/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "c03cf94b845573517ccef6308e40822ad8dab77bde9a52bf92c5bc55ead6ed09",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #6/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "f3307ae7ac761ed535a9af43a234cff708802c2b2ed937604039e3b0cfea34d0",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #7/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "779ac4a120049d10809a39d222f4d7381c3c0e94838c7cf6848d25fb36439ad6",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #8/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "8adc6ae3258c018036cc447230cc549097313ea4c9a1ec0ff22b97f0bbfd0fe5",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #9/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "298f304165a1003b8a745de810f82495da248bc68b4334eb94cf650d2c5acbbc",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #10/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "cb6a88ec222500543d25ce8a9fcbb35b4ac8d731637bf3217db0c0adfa7207eb",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #11/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "21908e0267eaa7ce458dfbcab68f0f1440bca65e8ed86b45ea117399e7e40aa8",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #12/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "49d812bf11f934674b85d6650f6eaeb52dd342bde524a6851d3225540ad8f823",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #13/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "1058aa5b89b9100ca4993b89c1c5109eafbe0e5671fd5f4567c7d4b5adb5a9ec",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #14/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "aba29cbb64aa0e95f5aa7b5dbbe861c977da3b4924dd39db835e7236a7bd2c20",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #15/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "1ea843fd94c1436cb828b661249e061bb6b44876ecf53fc0950b94601d77f397",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #16/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "51658d54e8a77412057a3e61664de6fc4c344d767ca6de5cc714875656b2d4bb",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "Curated Phase 2 example #17/17: randomly sampled from the dataset's real Samourai Whirlpool CoinJoin list, then independently fetched from Blockstream and confirmed to have exactly 5 inputs and 5 outputs with all outputs equal at a configured Whirlpool pool denomination. Not fabricated \u2014 sourced from a real academic mainnet dataset and independently re-verified via analyze_txid()."
+  },
+  {
+    "txid": "66b21ea5d1d8a1f4ec026cd5e3d6efa6abf513560d3a5a6068a50c35d1a1c66f",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "COINJOIN_LIKE",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "IMPORTANT \u2014 documents a known Phase 1 scope limitation, not a bug: this is a real, dataset-confirmed Samourai Whirlpool round with 8 inputs / 8 outputs (all equal at the 0.01 BTC pool denomination). The Phase 1 rule only targets the legacy 5-input/5-output shape, so this correctly scores COINJOIN_LIKE (protocol UNKNOWN, not WHIRLPOOL_LEGACY) rather than CONFIRMED. Included deliberately so the benchmark's recall metric honestly reflects that the current rule misses larger real Whirlpool rounds \u2014 see VALIDATION_NOTES.md."
+  },
+  {
+    "txid": "dfe57d33a81720a059ceb5e84d546a05e55791b0eafca50574c9ed4c645ee575",
+    "expected_family": "UNKNOWN",
+    "expected_classification": "NOT_WHIRLPOOL",
+    "category": "ordinary_payment_negative",
+    "source": "Sampled from a recent Bitcoin mainnet block via Blockstream Esplora during Phase 2 curation",
+    "source_url": "https://blockstream.info/api/tx/dfe57d33a81720a059ceb5e84d546a05e55791b0eafca50574c9ed4c645ee575",
+    "notes": "1 input, 2 outputs (one a zero-value data-carrier-style output) \u2014 verified live to classify NOT_WHIRLPOOL with hint ORDINARY_PAYMENT_LIKE."
+  },
+  {
+    "txid": "4e624682a5b69dbd1596628eec644c0f4782ba798f2794f7177715395bca7b91",
+    "expected_family": "UNKNOWN",
+    "expected_classification": "NOT_WHIRLPOOL",
+    "category": "batching_negative",
+    "source": "Sampled from a recent Bitcoin mainnet block via Blockstream Esplora during Phase 2 curation",
+    "source_url": "https://blockstream.info/api/tx/4e624682a5b69dbd1596628eec644c0f4782ba798f2794f7177715395bca7b91",
+    "notes": "1 input, 43 unequal outputs (exchange/service-style payout batch) \u2014 verified live to classify NOT_WHIRLPOOL with hint BATCHING_LIKE."
+  },
+  {
+    "txid": "2759143d93dc0bc29170eae07ad97a9c8931b60a7b673de04ac26d9764324a38",
+    "expected_family": "UNKNOWN",
+    "expected_classification": "NOT_WHIRLPOOL",
+    "category": "consolidation_negative",
+    "source": "Sampled from a recent Bitcoin mainnet block via Blockstream Esplora during Phase 2 curation",
+    "source_url": "https://blockstream.info/api/tx/2759143d93dc0bc29170eae07ad97a9c8931b60a7b673de04ac26d9764324a38",
+    "notes": "23 inputs, 2 outputs (UTXO consolidation shape) \u2014 verified live to classify NOT_WHIRLPOOL with hint CONSOLIDATION_LIKE."
+  },
+  {
+    "txid": "TODO",
+    "expected_family": "UNKNOWN",
+    "category": "hard_negative",
+    "notes": "No verified public txid curated yet. Searched 350 random recent mainnet transactions via Blockstream during Phase 2 curation and found zero with exactly 5 inputs and 5 outputs at all (let alone a coincidental non-Whirlpool-denomination match) \u2014 this shape appears to be genuinely rare in ordinary Bitcoin traffic. Do not use in benchmark until replaced."
+  },
+  {
+    "txid": "TODO",
+    "expected_family": "UNKNOWN",
+    "category": "payjoin_caveat",
+    "notes": "No verified public txid curated yet. Do not use in benchmark until replaced."
+  }
+]

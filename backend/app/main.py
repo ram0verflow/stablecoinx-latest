@@ -6,7 +6,7 @@ from slowapi import _rate_limit_exceeded_handler  # FIXED: S3
 from slowapi.errors import RateLimitExceeded  # FIXED: S3
 from slowapi.middleware import SlowAPIMiddleware  # FIXED: S3
 
-from app.api.v1.endpoints import auth, payments, decisions, approvals, audit, alerts, policy, revalidation, wallet, ai, privacy, execution, monitoring, reports  # FIXED: S3
+from app.api.v1.endpoints import auth, payments, decisions, approvals, audit, alerts, policy, revalidation, wallet, ai, privacy, execution, monitoring, reports, obfuscation  # FIXED: S3
 from app.core.config import settings  # FIXED: S2
 from app.core.rate_limit import limiter  # FIXED: S3
 from app.middleware import RateLimiterMiddleware, RequestLoggerMiddleware  # FIXED: S3
@@ -131,3 +131,4 @@ app.include_router(execution.router, prefix="/api/v1/execution", tags=["executio
 app.include_router(wallet.router, prefix="/api/v1/wallet", tags=["wallet"])  # FIXED: S3
 app.include_router(privacy.router, prefix="/api/v1/privacy", tags=["privacy"])  # FIXED: S3
 app.include_router(monitoring.router, prefix="/api/v1/monitoring", tags=["monitoring"])  # FIXED: S3
+app.include_router(obfuscation.router, prefix="/api/v1/obfuscation", tags=["obfuscation"])
