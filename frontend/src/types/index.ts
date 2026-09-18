@@ -263,4 +263,6 @@ export interface MonitoringStats {
   rpc_status: { base_sepolia: boolean; polygon_amoy: boolean };
   neo4j_status: boolean;
   redis_status: boolean;
+  compliance_provider?: { name: string; configured: boolean };
+  wallet_intelligence?: { provider: 'neo4j' | 'beeceptor'; status: boolean };
 }

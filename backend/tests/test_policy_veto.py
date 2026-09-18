@@ -36,3 +36,17 @@ def test_veto_respects_ai_on_clean_payment():
         "direct_transfer",
     )
     assert out == FinalDecision.approved
+
+
+def test_veto_forces_review_on_degraded_compliance_provider():
+    """A compliance provider outage must never look like a clean pass —
+    even when the AI advisory and every other signal is clean."""
+    out = apply_veto(
+        {
+            "country_policy": {"is_allowed": True},
+            "compliance": {"sanctions_hit": False, "provider_status": "degraded"},
+            "wallet_graph": {"risk_score": 0.1},
+        },
+        "direct_transfer",
+    )
+    assert out == FinalDecision.pending_review

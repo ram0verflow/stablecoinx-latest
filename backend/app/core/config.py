@@ -82,6 +82,13 @@ class Settings(BaseSettings):  # FIXED: C3
     ZK_PROVER_URL: str = Field("")  # FIXED: PHASE5
     FHE_GATEWAY_URL: str = Field("")  # FIXED: PHASE5
 
+    # Compliance provider — "local" (built-in deterministic fixtures) or "beeceptor"
+    # (external mock provider). Defaults to local so existing deployments are
+    # unaffected until BEECEPTOR_BASE_URL is explicitly configured.
+    COMPLIANCE_PROVIDER: str = Field("local")
+    BEECEPTOR_BASE_URL: str = Field("")
+    BEECEPTOR_TIMEOUT_SECONDS: float = 5.0
+
     model_config = {  # FIXED: C3
         "env_file": (".env", "../.env"),  # FIXED: C3
         "env_file_encoding": "utf-8",  # FIXED: C3

@@ -330,3 +330,5 @@ class MonitoringStats(BaseModel):
     rpc_status: Dict[str, bool]
     neo4j_status: bool
     redis_status: bool
+    compliance_provider: Optional[Dict[str, Any]] = None
+    wallet_intelligence: Optional[Dict[str, Any]] = None

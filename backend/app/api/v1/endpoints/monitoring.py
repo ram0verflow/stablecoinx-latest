@@ -16,6 +16,7 @@ from app.services.ai.ai_health_service import get_active_ai_engine
 from app.services.blockchain.rpc_service import rpc_service
 from app.services.compliance.wallet_graph_service import wallet_graph_service
 from app.db.redis_client import get_redis
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -129,6 +130,14 @@ async def monitoring_stats(
         ai_engine = get_active_ai_engine()
         ai_engine_status = "down" if ai_engine == "none" else ai_engine
 
+        compliance_provider_name = settings.COMPLIANCE_PROVIDER or "local"
+        beeceptor_configured = bool(settings.BEECEPTOR_BASE_URL.strip())
+        # Wallet risk shares the same COMPLIANCE_PROVIDER switch as KYC/sanctions
+        # (see app/services/compliance/wallet_graph_service.py) — report the
+        # source actually driving wallet-risk analysis right now, not a raw
+        # Neo4j ping that's meaningless once Beeceptor mode is selected.
+        wallet_intelligence_ok = beeceptor_configured if compliance_provider_name == "beeceptor" else neo4j_ok
+
         return {
             "total_payments": int(total_payments),
             "approved_today": int(approved_today),
@@ -144,6 +153,14 @@ async def monitoring_stats(
             },
             "neo4j_status": neo4j_ok,
             "redis_status": redis_ok,
+            "compliance_provider": {
+                "name": compliance_provider_name,
+                "configured": True if compliance_provider_name == "local" else beeceptor_configured,
+            },
+            "wallet_intelligence": {
+                "provider": "beeceptor" if compliance_provider_name == "beeceptor" else "neo4j",
+                "status": wallet_intelligence_ok,
+            },
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error fetching monitoring stats: {exc}")

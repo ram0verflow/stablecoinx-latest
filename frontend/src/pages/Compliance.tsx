@@ -38,14 +38,30 @@ export const Compliance: React.FC = () => {
       entity: p.receiver_company ?? p.sender_company ?? 'Unknown entity',
       risk: p.status === 'blocked' || Number(p.risk_score ?? 0) >= 80 ? 'Critical' : 'Elevated',
       reason: p.status === 'blocked' ? 'Policy veto — sanctions or corridor block' : 'Wallet / issuer risk score above threshold',
-      source: p.status === 'blocked' ? 'Live' : stats.neo4j_status ? 'Live' : 'Cached',
+      source: p.status === 'blocked' ? 'Live' : stats.wallet_intelligence?.status ? 'Live' : 'Cached',
       age: p.created_at,
     }))
-    .slice(0, 8), [payments, stats.neo4j_status]);
+    .slice(0, 8), [payments, stats.wallet_intelligence?.status]);
+
+  const compliance = stats.compliance_provider;
+  const complianceIsBeeceptor = compliance?.name === 'beeceptor';
 
   const providers = [
+    {
+      name: 'Compliance Provider',
+      sub: complianceIsBeeceptor ? 'Beeceptor · KYC & sanctions' : 'Local deterministic fixtures',
+      ok: complianceIsBeeceptor && !!compliance?.configured,
+      cls: complianceIsBeeceptor ? (compliance?.configured ? 'pst-live' : 'pst-offline') : 'pst-simulated',
+      label: complianceIsBeeceptor ? (compliance?.configured ? 'Live' : 'Not Connected') : 'Simulated',
+    },
     { name: 'AI Advisory', sub: stats.ai_engine_status === 'down' ? 'Unavailable' : stats.ai_engine_status, ok: stats.ai_engine_status !== 'down', cls: stats.ai_engine_status !== 'down' ? 'pst-live' : 'pst-offline', label: stats.ai_engine_status !== 'down' ? 'Live' : 'Offline' },
-    { name: 'Wallet Intelligence', sub: 'Neo4j graph', ok: stats.neo4j_status, cls: stats.neo4j_status ? 'pst-live' : 'pst-degraded', label: stats.neo4j_status ? 'Live' : 'Degraded' },
+    {
+      name: 'Wallet Intelligence',
+      sub: stats.wallet_intelligence?.provider === 'beeceptor' ? 'Beeceptor mock' : 'Neo4j graph',
+      ok: !!stats.wallet_intelligence?.status,
+      cls: stats.wallet_intelligence?.status ? 'pst-live' : 'pst-degraded',
+      label: stats.wallet_intelligence?.status ? 'Live' : 'Degraded',
+    },
     { name: 'Settlement RPC · Base', sub: 'Base Sepolia', ok: stats.rpc_status.base_sepolia, cls: stats.rpc_status.base_sepolia ? 'pst-live' : 'pst-offline', label: stats.rpc_status.base_sepolia ? 'Live' : 'Offline' },
     { name: 'Settlement RPC · Polygon', sub: 'Polygon Amoy', ok: stats.rpc_status.polygon_amoy, cls: stats.rpc_status.polygon_amoy ? 'pst-live' : 'pst-offline', label: stats.rpc_status.polygon_amoy ? 'Live' : 'Offline' },
   ];
@@ -64,7 +80,7 @@ export const Compliance: React.FC = () => {
           ))}
         </div>
 
-        {!stats.neo4j_status && (
+        {!stats.wallet_intelligence?.status && (
           <div className="degraded-banner">
             <IcAlertTriangle className="" />
             <div><div className="t">Live wallet analysis is unavailable</div><div className="s">Payments requiring fresh evidence are routed to manual review instead of trusting a default low-risk result while this data source is unavailable.</div></div>

@@ -16,10 +16,15 @@ def apply_veto(pipeline_results: dict, ai_decision: str) -> FinalDecision:
     # If sanctions_hit=True → BLOCK regardless of AI
     if compliance.get("sanctions_hit", False):
         return FinalDecision.blocked
-        
+
     # If internal_blacklist_hit=True → BLOCK regardless of AI
     if compliance.get("internal_blacklist_hit", False):
         return FinalDecision.blocked
+
+    # Compliance provider unreachable/degraded → force REVIEW. Missing
+    # sanctions/KYC evidence must never be treated as a clean pass.
+    if compliance.get("provider_status") == "degraded":
+        return FinalDecision.pending_review
 
     # Explicit fail/bypass from treasury controls
     if treasury_controls.get("daily_limit_ok") is False:

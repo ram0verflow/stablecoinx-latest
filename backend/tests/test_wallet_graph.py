@@ -1,6 +1,18 @@
 from types import SimpleNamespace
 
+import pytest
+
+from app.core.config import settings
 from app.services.compliance import wallet_graph_service
+
+
+@pytest.fixture(autouse=True)
+def _default_to_local_provider(monkeypatch):
+    """These tests exercise the local Neo4j-backed path specifically — pin
+    it explicitly rather than relying on whatever COMPLIANCE_PROVIDER
+    happens to be set to in the ambient .env (see test_compliance_engine.py
+    for the same fix and why it's needed)."""
+    monkeypatch.setattr(settings, "COMPLIANCE_PROVIDER", "local")
 
 
 def test_suspicious_wallet_high_risk(monkeypatch):
@@ -17,7 +29,7 @@ def test_suspicious_wallet_high_risk(monkeypatch):
             return [{"sus_addr": "0xSUS"}]
 
     class _Driver:
-        def session(self):
+        def session(self, database=None):
             return _Session()
 
     monkeypatch.setattr(wallet_graph_service, "get_neo4j_driver", lambda: _Driver())
@@ -39,7 +51,7 @@ def test_mixer_adjacent_flagged(monkeypatch):
             return []
 
     class _Driver:
-        def session(self):
+        def session(self, database=None):
             return _Session()
 
     monkeypatch.setattr(wallet_graph_service, "get_neo4j_driver", lambda: _Driver())
@@ -61,7 +73,7 @@ def test_clean_wallet_low_risk(monkeypatch):
             return []
 
     class _Driver:
-        def session(self):
+        def session(self, database=None):
             return _Session()
 
     monkeypatch.setattr(wallet_graph_service, "get_neo4j_driver", lambda: _Driver())

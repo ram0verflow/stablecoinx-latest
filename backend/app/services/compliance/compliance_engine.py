@@ -1,6 +1,9 @@
 import hashlib
 from datetime import datetime, timedelta, timezone
+
+from app.core.config import settings
 from app.models.payment_intents import PaymentIntent
+from app.services.compliance import beeceptor_provider
 
 SANCTIONED_ENTITIES = [
     "tehran trade co",
@@ -86,6 +89,22 @@ def check_internal_blacklist(company_name: str) -> bool:
     return any(b.lower() in company_lower for b in INTERNAL_BLACKLIST)
 
 def run_compliance_checks(payment: PaymentIntent) -> dict:
+    provider = (settings.COMPLIANCE_PROVIDER or "local").strip().lower()
+    if provider == "beeceptor":
+        return beeceptor_provider.screen(
+            sender_company=payment.sender_company,
+            receiver_company=payment.receiver_company,
+            sender_wallet=getattr(payment, "sender_wallet", None),
+            receiver_wallet=getattr(payment, "receiver_wallet", None),
+        )
+    return _run_local_checks(payment)
+
+
+def _run_local_checks(payment: PaymentIntent) -> dict:
+    """Built-in deterministic fixtures — the default provider. Kept as a
+    module-level function (rather than inlined) so existing tests can
+    monkeypatch check_kyc_status / check_sanctions / check_internal_blacklist
+    at the module level and still exercise this path."""
     # Check sender
     sender_sanctions = check_sanctions(payment.sender_company)
     sender_blacklist = check_internal_blacklist(payment.sender_company)
@@ -118,5 +137,9 @@ def run_compliance_checks(payment: PaymentIntent) -> dict:
             "sender": sender_kyc,
             "receiver": receiver_kyc
         },
-        "overall": overall
+        "overall": overall,
+        "provider_name": "local_deterministic",
+        "provider_status": "simulated",
+        "provider_detail": None,
+        "latency_ms": None,
     }

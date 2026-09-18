@@ -5,6 +5,7 @@ from neo4j import GraphDatabase
 
 from app.core.config import settings
 from app.db.redis_client import get_redis
+from app.services.compliance import beeceptor_provider
 
 logger = logging.getLogger(__name__)
 
@@ -32,17 +33,27 @@ class WalletGraphService:
 
     @staticmethod
     def _default_result(identifier: str, reason: str) -> dict:
+        # A required intelligence source being unavailable must never look
+        # like a clean, trusted "low risk" result — that's exactly the
+        # fail-open gap the plan doc calls out. An entity simply not being
+        # present in an otherwise-working graph is a different, milder case
+        # and stays "low".
+        unavailable = reason == "neo4j_unavailable"
         return {
             "risk_score": 0.1,
             "mixer_adjacent": False,
             "laundering_cluster": False,
             "exchange_hop_behavior": False,
             "suspicious_links": [],
-            "overall_risk": "low",
+            "overall_risk": "medium" if unavailable else "low",
+            "neo4j_degraded": unavailable,
             "note": f"Entity '{identifier[:20]}' not found in graph ({reason})",
         }
 
     def analyze_wallet(self, identifier: str) -> dict:
+        if (settings.COMPLIANCE_PROVIDER or "local").strip().lower() == "beeceptor":
+            return beeceptor_provider.check_wallet_risk(identifier)
+
         redis_client = get_redis()
         if redis_client:
             try:
@@ -52,10 +63,11 @@ class WalletGraphService:
             except Exception:
                 pass
 
-        if not self.driver:
+        driver = get_neo4j_driver()
+        if not driver:
             return self._default_result(identifier, "neo4j_unavailable")
 
-        with self.driver.session(database="neo4j") as session:
+        with driver.session(database="neo4j") as session:
             if identifier.startswith("0x") or identifier.startswith("0X"):
                 result = session.run(
                     "MATCH (w:Wallet {address: $id}) RETURN w",
