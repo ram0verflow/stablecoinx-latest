@@ -2,7 +2,7 @@ import sys
 import os
 
 # Add the backend dir to sys.path so app modules can be found
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backend"))
 
 from app.db.database import SessionLocal
 from app.models.alerts import Alert

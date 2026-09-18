@@ -46,3 +46,6 @@ Thumbs.db
 # Test artifacts
 .coverage
 htmlcov/
+
+# Generated audit-report PDF exports (backend/app/services/reports)
+backend/*.pdf
