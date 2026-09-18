@@ -12,6 +12,7 @@ export interface User {
   name: string;
   role: UserRole;
   walletAddress?: string;
+  aiPreference?: string;
 }
 
 export interface LoginRequest {
@@ -29,9 +30,11 @@ export interface AuthResponse {
 // ── Payment ──────────────────────────────────────────────────
 export type PaymentStatus =
   | 'pending'
+  | 'under_review'
   | 'approved'
   | 'blocked'
-  | 'settled'
+  | 'executed'
+  | 'failed'
   | 'review'
   | 'revalidation';
 
@@ -79,7 +82,14 @@ export interface CreatePaymentRequest {
 }
 
 // ── Alert ────────────────────────────────────────────────────
-export type AlertType = 'approved' | 'blocked' | 'review' | 'revalidation';
+export type AlertType =
+  | 'approved'
+  | 'blocked'
+  | 'review'
+  | 'revalidation'
+  | 'review_needed'
+  | 'settlement_executed'
+  | 'settlement_failed';
 
 export interface Alert {
   id: string;
@@ -134,12 +144,56 @@ export interface RouteAnalysis {
     totalCost: string;
   };
   aiDecision: {
-    action: 'APPROVE' | 'REJECT' | 'ESCALATE';
+    action: string;
     reasoning: string;
     confidence: number;
+    engineUsed?: string;
+    latencyMs?: number;
+    riskSummary?: string;
+    flags?: string[];
+    alternativeOptions?: string[];
   };
-  fheCheck: { status: 'PASS' | 'FAIL'; details: string };
-  zkProof: { generated: boolean; proofHash: string };
+  fheCheck: {
+    status: 'PASS' | 'FAIL' | 'PENDING';
+    details: string;
+    checks?: FheCheckItem[];
+    method?: string;
+    overall_pass?: boolean | null;
+    fhe_available?: boolean;
+  };
+  zkProof: {
+    generated: boolean;
+    proofHash: string;
+    bundleId?: string;
+    isValid?: boolean;
+    proofMethod?: string;
+    on_chain_tx?: string | null;
+    basescan_url?: string | null;
+    components?: {
+      kyc?: ZkComponent;
+      range?: ZkComponent;
+      approval?: ZkComponent;
+    };
+    privacy_statement?: string;
+  };
+}
+
+export interface FheCheckItem {
+  check_id: string;
+  check_label: string;
+  threshold: number;
+  result: boolean;
+  method: string;
+  encrypted_proof: string;
+  privacy_note?: string;
+}
+
+export interface ZkComponent {
+  proof_type?: string;
+  is_valid?: boolean;
+  proof_hash?: string;
+  public_inputs?: Record<string, unknown>;
+  proof_method?: string;
 }
 
 // ── Audit Report ─────────────────────────────────────────────
@@ -160,10 +214,26 @@ export type RevalidationStatus = 'pending' | 'completed' | 'failed';
 
 export interface RevalidationRecord {
   id: string;
-  paymentId: string;
-  originalDecision: string;
-  revalidationReason: string;
-  newRiskScore: number;
+  payment_id: string;
+  trigger_reason: string;
+  original_decision: string;
+  new_decision: string;
+  new_risk_score: number;
   status: RevalidationStatus;
-  timestamp: string;
+  created_at: string;
+  decision_changed?: boolean;
+}
+
+export interface MonitoringStats {
+  total_payments: number;
+  approved_today: number;
+  blocked_today: number;
+  pending_review: number;
+  avg_ai_latency_ms: number;
+  tx_success_rate: number;
+  top_corridors: { corridor: string; count: number; block_rate: number }[];
+  ai_engine_status: 'ollama' | 'groq' | 'down';
+  rpc_status: { base_sepolia: boolean; polygon_amoy: boolean };
+  neo4j_status: boolean;
+  redis_status: boolean;
 }

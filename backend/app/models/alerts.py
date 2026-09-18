@@ -14,6 +14,8 @@ class AlertType(str, PyEnum):
     blocked = "blocked"
     review_needed = "review_needed"
     revalidation_triggered = "revalidation_triggered"
+    settlement_executed = "settlement_executed"
+    settlement_failed = "settlement_failed"
 
 
 class Alert(Base):

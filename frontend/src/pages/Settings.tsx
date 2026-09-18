@@ -1,23 +1,59 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ToastProvider';
 import { Shield, User, Wallet, Bell, Database, Lock } from 'lucide-react';
 import { RoleBadge } from '../components/StatusBadge';
+import { authApi, monitoringApi } from '../lib/api';
 
 export const Settings: React.FC = () => {
-  const { user, setWallet } = useAuthStore();
+  const { user, setWallet, updatePreference } = useAuthStore();
   const { showToast } = useToast();
 
-  const [aiEngine, setAiEngine] = useState('ollama');
+  const [aiEngine, setAiEngine] = useState(user?.aiPreference || 'ollama');
   const [telegramAlerts, setTelegramAlerts] = useState(true);
+  const [serviceHealth, setServiceHealth] = useState({
+    ai: false,
+    base: false,
+    polygon: false,
+    neo4j: false,
+    redis: false,
+  });
+
+  const refreshHealth = async () => {
+    try {
+      const { data } = await monitoringApi.stats();
+      const aiUp = data.ai_engine_status !== 'down';
+      setServiceHealth({
+        ai: aiUp,
+        base: !!data.rpc_status?.base_sepolia,
+        polygon: !!data.rpc_status?.polygon_amoy,
+        neo4j: !!data.neo4j_status,
+        redis: !!data.redis_status,
+      });
+    } catch {
+      setServiceHealth({ ai: false, base: false, polygon: false, neo4j: false, redis: false });
+    }
+  };
+
+  useEffect(() => {
+    refreshHealth();
+    const timer = setInterval(refreshHealth, 10_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleDisconnect = () => {
     setWallet('');
     showToast('info', 'Wallet Disconnected', 'Your wallet has been disconnected from the session');
   };
 
-  const handleSave = () => {
-    showToast('success', 'Settings Saved', 'Your preferences have been updated');
+  const handleSave = async () => {
+    try {
+      await authApi.updatePreference(aiEngine);
+      updatePreference(aiEngine);
+      showToast('success', 'Settings Saved', 'Your preferences have been updated');
+    } catch (error) {
+      showToast('error', 'Update Failed', 'Could not save your preferences');
+    }
   };
 
   return (
@@ -127,6 +163,36 @@ export const Settings: React.FC = () => {
                 </label>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-title">Live Service Status</h3>
+            <button onClick={refreshHealth} className="btn-secondary text-xs">Refresh</button>
+          </div>
+          <div className="grid grid-cols-5 gap-3">
+            {[
+              { key: 'ai', label: 'AI Engine' },
+              { key: 'base', label: 'Base RPC' },
+              { key: 'polygon', label: 'Polygon RPC' },
+              { key: 'neo4j', label: 'Neo4j' },
+              { key: 'redis', label: 'Redis' },
+            ].map((s) => {
+              const up = serviceHealth[s.key as keyof typeof serviceHealth];
+              return (
+                <div key={s.key} className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 text-center">
+                  <div className={`mx-auto mb-2 h-2.5 w-2.5 rounded-full ${up ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  <p className="text-xs text-slate-300">{s.label}</p>
+                  <button
+                    className="mt-2 text-[10px] text-indigo-300 hover:text-indigo-200"
+                    onClick={() => showToast(up ? 'success' : 'error', `${s.label} test`, up ? 'Connection healthy' : 'Connection failed')}
+                  >
+                    Test Connection
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 

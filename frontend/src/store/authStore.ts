@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { User, UserRole } from '../types';
+import type { User } from '../types';
 
 interface AuthState {
   user: User | null;
@@ -8,6 +8,7 @@ interface AuthState {
   login: (user: User, token: string) => void;
   logout: () => void;
   setWallet: (address: string) => void;
+  updatePreference: (preference: string) => void;
   canApprove: () => boolean;
 }
 
@@ -39,8 +40,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  updatePreference: (preference) => {
+    const user = get().user;
+    if (user) {
+      const updated = { ...user, aiPreference: preference };
+      localStorage.setItem('sg_user', JSON.stringify(updated));
+      set({ user: updated });
+    }
+  },
+
   canApprove: () => {
-    const role = get().user?.role;
-    return role === 'Admin' || role === 'Treasury Officer';
+    const role = get().user?.role as string;
+    if (!role) return false;
+    const r = role.toLowerCase().replace(' ', '_');
+    return r === 'admin' || r === 'treasury_officer';
   },
 }));

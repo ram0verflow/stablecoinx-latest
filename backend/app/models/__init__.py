@@ -8,6 +8,7 @@ from app.models.audit_records import AuditRecord
 from app.models.alerts import Alert, AlertType
 from app.models.policy_rules import PolicyRule
 from app.models.revalidation_records import RevalidationRecord, RevalidationStatus
+from app.models.wallet_risk_cache import WalletRiskCache
 
 __all__ = [
     "User", "UserRole",
@@ -18,4 +19,5 @@ __all__ = [
     "Alert", "AlertType",
     "PolicyRule",
     "RevalidationRecord", "RevalidationStatus",
+    "WalletRiskCache",
 ]

@@ -1,0 +1,116 @@
+{
+  "timestamp": "2026-04-30T15:12:19.389679",
+  "sections": {
+    "pipeline": [
+      {
+        "check": "Database tables created",
+        "status": "PASS",
+        "details": "All SQLAlchemy models initialized",
+        "timestamp": "2026-04-30T15:12:22.985611"
+      },
+      {
+        "check": "Test user created",
+        "status": "PASS",
+        "details": "User: test_efb49b20@settleguard.test",
+        "timestamp": "2026-04-30T15:12:23.340031"
+      },
+      {
+        "check": "Test payment created",
+        "status": "PASS",
+        "details": "Payment ID: a761ec8d-e5d8-4ef9-8225-8b250804e903",
+        "timestamp": "2026-04-30T15:12:23.355424"
+      },
+      {
+        "check": "Pipeline executed",
+        "status": "PASS",
+        "details": "Completed in 85.91s",
+        "timestamp": "2026-04-30T15:13:49.268835"
+      },
+      {
+        "check": "Pipeline results structure",
+        "status": "PASS",
+        "details": "All 9 engine results present",
+        "timestamp": "2026-04-30T15:13:49.268871"
+      },
+      {
+        "check": "Payment status updated",
+        "status": "PASS",
+        "details": "Status: blocked",
+        "timestamp": "2026-04-30T15:13:49.268896"
+      },
+      {
+        "check": "Compliance decision created",
+        "status": "PASS",
+        "details": "Decision ID: 46461d7f-e600-49ae-a47d-ea7a1f342c26",
+        "timestamp": "2026-04-30T15:13:49.268918"
+      }
+    ],
+    "on_chain_proof": [
+      {
+        "check": "On-chain proof validation",
+        "status": "FAIL",
+        "details": "(builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT compliance_decisions.id AS compliance_decisions_id, compliance_decisions.payment_id AS compliance_decisions_payment_id, compliance_decisions.country_policy_result AS compliance_decisions_country_policy_result, compliance_decisions.wallet_risk_result AS compliance_decisions_wallet_risk_result, compliance_decisions.issuer_risk_result AS compliance_decisions_issuer_risk_result, compliance_decisions.chain_governance_result AS compliance_decisions_chain_governance_result, compliance_decisions.liquidity_result AS compliance_decisions_liquidity_result, compliance_decisions.ai_decision AS compliance_decisions_ai_decision, compliance_decisions.ai_reasoning AS compliance_decisions_ai_reasoning, compliance_decisions.ai_confidence AS compliance_decisions_ai_confidence, compliance_decisions.ai_flags AS compliance_decisions_ai_flags, compliance_decisions.ai_alternatives AS compliance_decisions_ai_alternatives, compliance_decisions.ai_engine_used AS compliance_decisions_ai_engine_used, compliance_decisions.ai_prompt_tokens AS compliance_decisions_ai_prompt_tokens, compliance_decisions.ai_latency_ms AS compliance_decisions_ai_latency_ms, compliance_decisions.ai_risk_summary AS compliance_decisions_ai_risk_summary, compliance_decisions.fhe_check_result AS compliance_decisions_fhe_check_result, compliance_decisions.zk_proof_reference AS compliance_decisions_zk_proof_reference, compliance_decisions.policy_version AS compliance_decisions_policy_version, compliance_decisions.final_decision AS compliance_decisions_final_decision, compliance_decisions.created_at AS compliance_decisions_created_at \nFROM compliance_decisions \nWHERE compliance_decisions.payment_id = ? ORDER BY compliance_decisions.created_at DESC\n LIMIT ? OFFSET ?]\n[parameters: [{}]]",
+        "timestamp": "2026-04-30T15:13:49.270440"
+      }
+    ],
+    "ai_engine": [
+      {
+        "check": "AI engine validation",
+        "status": "FAIL",
+        "details": "(builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT compliance_decisions.id AS compliance_decisions_id, compliance_decisions.payment_id AS compliance_decisions_payment_id, compliance_decisions.country_policy_result AS compliance_decisions_country_policy_result, compliance_decisions.wallet_risk_result AS compliance_decisions_wallet_risk_result, compliance_decisions.issuer_risk_result AS compliance_decisions_issuer_risk_result, compliance_decisions.chain_governance_result AS compliance_decisions_chain_governance_result, compliance_decisions.liquidity_result AS compliance_decisions_liquidity_result, compliance_decisions.ai_decision AS compliance_decisions_ai_decision, compliance_decisions.ai_reasoning AS compliance_decisions_ai_reasoning, compliance_decisions.ai_confidence AS compliance_decisions_ai_confidence, compliance_decisions.ai_flags AS compliance_decisions_ai_flags, compliance_decisions.ai_alternatives AS compliance_decisions_ai_alternatives, compliance_decisions.ai_engine_used AS compliance_decisions_ai_engine_used, compliance_decisions.ai_prompt_tokens AS compliance_decisions_ai_prompt_tokens, compliance_decisions.ai_latency_ms AS compliance_decisions_ai_latency_ms, compliance_decisions.ai_risk_summary AS compliance_decisions_ai_risk_summary, compliance_decisions.fhe_check_result AS compliance_decisions_fhe_check_result, compliance_decisions.zk_proof_reference AS compliance_decisions_zk_proof_reference, compliance_decisions.policy_version AS compliance_decisions_policy_version, compliance_decisions.final_decision AS compliance_decisions_final_decision, compliance_decisions.created_at AS compliance_decisions_created_at \nFROM compliance_decisions \nWHERE compliance_decisions.payment_id = ? ORDER BY compliance_decisions.created_at DESC\n LIMIT ? OFFSET ?]\n[parameters: [{}]]",
+        "timestamp": "2026-04-30T15:13:49.592329"
+      }
+    ],
+    "fhe": [
+      {
+        "check": "FHE validation",
+        "status": "FAIL",
+        "details": "(builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT compliance_decisions.id AS compliance_decisions_id, compliance_decisions.payment_id AS compliance_decisions_payment_id, compliance_decisions.country_policy_result AS compliance_decisions_country_policy_result, compliance_decisions.wallet_risk_result AS compliance_decisions_wallet_risk_result, compliance_decisions.issuer_risk_result AS compliance_decisions_issuer_risk_result, compliance_decisions.chain_governance_result AS compliance_decisions_chain_governance_result, compliance_decisions.liquidity_result AS compliance_decisions_liquidity_result, compliance_decisions.ai_decision AS compliance_decisions_ai_decision, compliance_decisions.ai_reasoning AS compliance_decisions_ai_reasoning, compliance_decisions.ai_confidence AS compliance_decisions_ai_confidence, compliance_decisions.ai_flags AS compliance_decisions_ai_flags, compliance_decisions.ai_alternatives AS compliance_decisions_ai_alternatives, compliance_decisions.ai_engine_used AS compliance_decisions_ai_engine_used, compliance_decisions.ai_prompt_tokens AS compliance_decisions_ai_prompt_tokens, compliance_decisions.ai_latency_ms AS compliance_decisions_ai_latency_ms, compliance_decisions.ai_risk_summary AS compliance_decisions_ai_risk_summary, compliance_decisions.fhe_check_result AS compliance_decisions_fhe_check_result, compliance_decisions.zk_proof_reference AS compliance_decisions_zk_proof_reference, compliance_decisions.policy_version AS compliance_decisions_policy_version, compliance_decisions.final_decision AS compliance_decisions_final_decision, compliance_decisions.created_at AS compliance_decisions_created_at \nFROM compliance_decisions \nWHERE compliance_decisions.payment_id = ? ORDER BY compliance_decisions.created_at DESC\n LIMIT ? OFFSET ?]\n[parameters: [{}]]",
+        "timestamp": "2026-04-30T15:13:49.604051"
+      }
+    ],
+    "zk": [
+      {
+        "check": "ZK proof validation",
+        "status": "FAIL",
+        "details": "(builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT compliance_decisions.id AS compliance_decisions_id, compliance_decisions.payment_id AS compliance_decisions_payment_id, compliance_decisions.country_policy_result AS compliance_decisions_country_policy_result, compliance_decisions.wallet_risk_result AS compliance_decisions_wallet_risk_result, compliance_decisions.issuer_risk_result AS compliance_decisions_issuer_risk_result, compliance_decisions.chain_governance_result AS compliance_decisions_chain_governance_result, compliance_decisions.liquidity_result AS compliance_decisions_liquidity_result, compliance_decisions.ai_decision AS compliance_decisions_ai_decision, compliance_decisions.ai_reasoning AS compliance_decisions_ai_reasoning, compliance_decisions.ai_confidence AS compliance_decisions_ai_confidence, compliance_decisions.ai_flags AS compliance_decisions_ai_flags, compliance_decisions.ai_alternatives AS compliance_decisions_ai_alternatives, compliance_decisions.ai_engine_used AS compliance_decisions_ai_engine_used, compliance_decisions.ai_prompt_tokens AS compliance_decisions_ai_prompt_tokens, compliance_decisions.ai_latency_ms AS compliance_decisions_ai_latency_ms, compliance_decisions.ai_risk_summary AS compliance_decisions_ai_risk_summary, compliance_decisions.fhe_check_result AS compliance_decisions_fhe_check_result, compliance_decisions.zk_proof_reference AS compliance_decisions_zk_proof_reference, compliance_decisions.policy_version AS compliance_decisions_policy_version, compliance_decisions.final_decision AS compliance_decisions_final_decision, compliance_decisions.created_at AS compliance_decisions_created_at \nFROM compliance_decisions \nWHERE compliance_decisions.payment_id = ? ORDER BY compliance_decisions.created_at DESC\n LIMIT ? OFFSET ?]\n[parameters: [{}]]",
+        "timestamp": "2026-04-30T15:13:49.619759"
+      }
+    ],
+    "redis": [
+      {
+        "check": "Redis connection",
+        "status": "FAIL",
+        "details": "Cannot connect: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.",
+        "timestamp": "2026-04-30T15:13:53.679292"
+      }
+    ],
+    "neo4j": [
+      {
+        "check": "Neo4j connection",
+        "status": "FAIL",
+        "details": "Unable to retrieve routing information",
+        "timestamp": "2026-04-30T15:13:54.491809"
+      }
+    ],
+    "data_completeness": [
+      {
+        "check": "Data completeness validation",
+        "status": "FAIL",
+        "details": "(builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT payment_intents.id AS payment_intents_id, payment_intents.sender_company AS payment_intents_sender_company, payment_intents.receiver_company AS payment_intents_receiver_company, payment_intents.source_country AS payment_intents_source_country, payment_intents.destination_country AS payment_intents_destination_country, payment_intents.source_chain AS payment_intents_source_chain, payment_intents.destination_chain AS payment_intents_destination_chain, payment_intents.amount AS payment_intents_amount, payment_intents.token AS payment_intents_token, payment_intents.purpose AS payment_intents_purpose, payment_intents.sender_wallet AS payment_intents_sender_wallet, payment_intents.receiver_wallet AS payment_intents_receiver_wallet, payment_intents.urgency AS payment_intents_urgency, payment_intents.intent_hash AS payment_intents_intent_hash, payment_intents.executed_at AS payment_intents_executed_at, payment_intents.revert_reason AS payment_intents_revert_reason, payment_intents.status AS payment_intents_status, payment_intents.created_by AS payment_intents_created_by, payment_intents.created_at AS payment_intents_created_at, payment_intents.updated_at AS payment_intents_updated_at \nFROM payment_intents \nWHERE payment_intents.id = ?\n LIMIT ? OFFSET ?]\n[parameters: [{}]]",
+        "timestamp": "2026-04-30T15:13:54.492696"
+      }
+    ]
+  },
+  "overall_status": "BLOCKED",
+  "critical_issues": [
+    "on_chain_proof/On-chain proof validation: (builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT compliance_decisions.id AS compliance_decisions_id, compliance_decisions.payment_id AS compliance_decisions_payment_id, compliance_decisions.country_policy_result AS compliance_decisions_country_policy_result, compliance_decisions.wallet_risk_result AS compliance_decisions_wallet_risk_result, compliance_decisions.issuer_risk_result AS compliance_decisions_issuer_risk_result, compliance_decisions.chain_governance_result AS compliance_decisions_chain_governance_result, compliance_decisions.liquidity_result AS compliance_decisions_liquidity_result, compliance_decisions.ai_decision AS compliance_decisions_ai_decision, compliance_decisions.ai_reasoning AS compliance_decisions_ai_reasoning, compliance_decisions.ai_confidence AS compliance_decisions_ai_confidence, compliance_decisions.ai_flags AS compliance_decisions_ai_flags, compliance_decisions.ai_alternatives AS compliance_decisions_ai_alternatives, compliance_decisions.ai_engine_used AS compliance_decisions_ai_engine_used, compliance_decisions.ai_prompt_tokens AS compliance_decisions_ai_prompt_tokens, compliance_decisions.ai_latency_ms AS compliance_decisions_ai_latency_ms, compliance_decisions.ai_risk_summary AS compliance_decisions_ai_risk_summary, compliance_decisions.fhe_check_result AS compliance_decisions_fhe_check_result, compliance_decisions.zk_proof_reference AS compliance_decisions_zk_proof_reference, compliance_decisions.policy_version AS compliance_decisions_policy_version, compliance_decisions.final_decision AS compliance_decisions_final_decision, compliance_decisions.created_at AS compliance_decisions_created_at \nFROM compliance_decisions \nWHERE compliance_decisions.payment_id = ? ORDER BY compliance_decisions.created_at DESC\n LIMIT ? OFFSET ?]\n[parameters: [{}]]",
+    "ai_engine/AI engine validation: (builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT compliance_decisions.id AS compliance_decisions_id, compliance_decisions.payment_id AS compliance_decisions_payment_id, compliance_decisions.country_policy_result AS compliance_decisions_country_policy_result, compliance_decisions.wallet_risk_result AS compliance_decisions_wallet_risk_result, compliance_decisions.issuer_risk_result AS compliance_decisions_issuer_risk_result, compliance_decisions.chain_governance_result AS compliance_decisions_chain_governance_result, compliance_decisions.liquidity_result AS compliance_decisions_liquidity_result, compliance_decisions.ai_decision AS compliance_decisions_ai_decision, compliance_decisions.ai_reasoning AS compliance_decisions_ai_reasoning, compliance_decisions.ai_confidence AS compliance_decisions_ai_confidence, compliance_decisions.ai_flags AS compliance_decisions_ai_flags, compliance_decisions.ai_alternatives AS compliance_decisions_ai_alternatives, compliance_decisions.ai_engine_used AS compliance_decisions_ai_engine_used, compliance_decisions.ai_prompt_tokens AS compliance_decisions_ai_prompt_tokens, compliance_decisions.ai_latency_ms AS compliance_decisions_ai_latency_ms, compliance_decisions.ai_risk_summary AS compliance_decisions_ai_risk_summary, compliance_decisions.fhe_check_result AS compliance_decisions_fhe_check_result, compliance_decisions.zk_proof_reference AS compliance_decisions_zk_proof_reference, compliance_decisions.policy_version AS compliance_decisions_policy_version, compliance_decisions.final_decision AS compliance_decisions_final_decision, compliance_decisions.created_at AS compliance_decisions_created_at \nFROM compliance_decisions \nWHERE compliance_decisions.payment_id = ? ORDER BY compliance_decisions.created_at DESC\n LIMIT ? OFFSET ?]\n[parameters: [{}]]",
+    "fhe/FHE validation: (builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT compliance_decisions.id AS compliance_decisions_id, compliance_decisions.payment_id AS compliance_decisions_payment_id, compliance_decisions.country_policy_result AS compliance_decisions_country_policy_result, compliance_decisions.wallet_risk_result AS compliance_decisions_wallet_risk_result, compliance_decisions.issuer_risk_result AS compliance_decisions_issuer_risk_result, compliance_decisions.chain_governance_result AS compliance_decisions_chain_governance_result, compliance_decisions.liquidity_result AS compliance_decisions_liquidity_result, compliance_decisions.ai_decision AS compliance_decisions_ai_decision, compliance_decisions.ai_reasoning AS compliance_decisions_ai_reasoning, compliance_decisions.ai_confidence AS compliance_decisions_ai_confidence, compliance_decisions.ai_flags AS compliance_decisions_ai_flags, compliance_decisions.ai_alternatives AS compliance_decisions_ai_alternatives, compliance_decisions.ai_engine_used AS compliance_decisions_ai_engine_used, compliance_decisions.ai_prompt_tokens AS compliance_decisions_ai_prompt_tokens, compliance_decisions.ai_latency_ms AS compliance_decisions_ai_latency_ms, compliance_decisions.ai_risk_summary AS compliance_decisions_ai_risk_summary, compliance_decisions.fhe_check_result AS compliance_decisions_fhe_check_result, compliance_decisions.zk_proof_reference AS compliance_decisions_zk_proof_reference, compliance_decisions.policy_version AS compliance_decisions_policy_version, compliance_decisions.final_decision AS compliance_decisions_final_decision, compliance_decisions.created_at AS compliance_decisions_created_at \nFROM compliance_decisions \nWHERE compliance_decisions.payment_id = ? ORDER BY compliance_decisions.created_at DESC\n LIMIT ? OFFSET ?]\n[parameters: [{}]]",
+    "zk/ZK proof validation: (builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT compliance_decisions.id AS compliance_decisions_id, compliance_decisions.payment_id AS compliance_decisions_payment_id, compliance_decisions.country_policy_result AS compliance_decisions_country_policy_result, compliance_decisions.wallet_risk_result AS compliance_decisions_wallet_risk_result, compliance_decisions.issuer_risk_result AS compliance_decisions_issuer_risk_result, compliance_decisions.chain_governance_result AS compliance_decisions_chain_governance_result, compliance_decisions.liquidity_result AS compliance_decisions_liquidity_result, compliance_decisions.ai_decision AS compliance_decisions_ai_decision, compliance_decisions.ai_reasoning AS compliance_decisions_ai_reasoning, compliance_decisions.ai_confidence AS compliance_decisions_ai_confidence, compliance_decisions.ai_flags AS compliance_decisions_ai_flags, compliance_decisions.ai_alternatives AS compliance_decisions_ai_alternatives, compliance_decisions.ai_engine_used AS compliance_decisions_ai_engine_used, compliance_decisions.ai_prompt_tokens AS compliance_decisions_ai_prompt_tokens, compliance_decisions.ai_latency_ms AS compliance_decisions_ai_latency_ms, compliance_decisions.ai_risk_summary AS compliance_decisions_ai_risk_summary, compliance_decisions.fhe_check_result AS compliance_decisions_fhe_check_result, compliance_decisions.zk_proof_reference AS compliance_decisions_zk_proof_reference, compliance_decisions.policy_version AS compliance_decisions_policy_version, compliance_decisions.final_decision AS compliance_decisions_final_decision, compliance_decisions.created_at AS compliance_decisions_created_at \nFROM compliance_decisions \nWHERE compliance_decisions.payment_id = ? ORDER BY compliance_decisions.created_at DESC\n LIMIT ? OFFSET ?]\n[parameters: [{}]]",
+    "redis/Redis connection: Cannot connect: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.",
+    "neo4j/Neo4j connection: Unable to retrieve routing information",
+    "data_completeness/Data completeness validation: (builtins.AttributeError) 'str' object has no attribute 'hex'\n[SQL: SELECT payment_intents.id AS payment_intents_id, payment_intents.sender_company AS payment_intents_sender_company, payment_intents.receiver_company AS payment_intents_receiver_company, payment_intents.source_country AS payment_intents_source_country, payment_intents.destination_country AS payment_intents_destination_country, payment_intents.source_chain AS payment_intents_source_chain, payment_intents.destination_chain AS payment_intents_destination_chain, payment_intents.amount AS payment_intents_amount, payment_intents.token AS payment_intents_token, payment_intents.purpose AS payment_intents_purpose, payment_intents.sender_wallet AS payment_intents_sender_wallet, payment_intents.receiver_wallet AS payment_intents_receiver_wallet, payment_intents.urgency AS payment_intents_urgency, payment_intents.intent_hash AS payment_intents_intent_hash, payment_intents.executed_at AS payment_intents_executed_at, payment_intents.revert_reason AS payment_intents_revert_reason, payment_intents.status AS payment_intents_status, payment_intents.created_by AS payment_intents_created_by, payment_intents.created_at AS payment_intents_created_at, payment_intents.updated_at AS payment_intents_updated_at \nFROM payment_intents \nWHERE payment_intents.id = ?\n LIMIT ? OFFSET ?]\n[parameters: [{}]]"
+  ],
+  "payment_id": "a761ec8d-e5d8-4ef9-8225-8b250804e903"
+}

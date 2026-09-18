@@ -1,24 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Wallet, LogOut } from 'lucide-react';
+import { Bell, LogOut } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useAlertStore } from '../store/alertStore';
 import { RoleBadge } from './StatusBadge';
-import { useToast } from './ToastProvider';
+import { WalletConnect } from './WalletConnect';
 
 export const Navbar: React.FC = () => {
-  const { user, logout, setWallet } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { unreadCount } = useAlertStore();
-  const { showToast } = useToast();
   const navigate = useNavigate();
-
-  const handleWalletConnect = () => {
-    const mockAddr = '0x' + Array.from({ length: 40 }, () =>
-      Math.floor(Math.random() * 16).toString(16)
-    ).join('');
-    setWallet(mockAddr);
-    showToast('success', 'Wallet Connected', `${mockAddr.slice(0, 6)}...${mockAddr.slice(-4)}`);
-  };
 
   const handleLogout = () => {
     logout();
@@ -36,19 +27,7 @@ export const Navbar: React.FC = () => {
 
       <div className="flex items-center gap-3">
         {/* Wallet */}
-        {user?.walletAddress ? (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/60 border border-slate-700/50 rounded-lg">
-            <div className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="text-xs font-mono text-slate-300">
-              {user.walletAddress.slice(0, 6)}...{user.walletAddress.slice(-4)}
-            </span>
-          </div>
-        ) : (
-          <button onClick={handleWalletConnect} className="btn-secondary text-xs flex items-center gap-2 !py-1.5 !px-3">
-            <Wallet className="w-3.5 h-3.5" />
-            Connect Wallet
-          </button>
-        )}
+        <WalletConnect />
 
         {/* Alerts */}
         <button

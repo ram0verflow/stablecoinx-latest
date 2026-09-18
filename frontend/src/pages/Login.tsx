@@ -20,8 +20,8 @@ export const Login: React.FC = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('admin@settleguard.io');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('admin@test.com');
+  const [password, setPassword] = useState('hackathon123');
   const [role, setRole] = useState<UserRole>('Admin');
   const [loading, setLoading] = useState(false);
 
@@ -32,8 +32,13 @@ export const Login: React.FC = () => {
     setLoading(true);
     try {
       const { data } = await authApi.login({ email, password, role });
-      login(data.user, data.access_token);
-      showToast('success', 'Welcome back!', `Logged in as ${data.user.name}`);
+      // Backend returns full_name, map to name for frontend User type
+      const user = {
+        ...data.user,
+        name: (data.user as any).full_name || data.user.name || email.split('@')[0],
+      };
+      login(user, data.access_token);
+      showToast('success', 'Welcome back!', `Logged in as ${user.name}`);
       navigate('/dashboard');
     } catch {
       // Demo mode: create mock user and proceed

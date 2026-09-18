@@ -1,11 +1,31 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAlertStore } from '../store/alertStore';
 import { alertApi } from '../lib/api';
 import { AlertBadge } from '../components/StatusBadge';
 import { Check, Clock } from 'lucide-react';
 
 export const Alerts: React.FC = () => {
-  const { alerts, markRead } = useAlertStore();
+  const { alerts, markRead, setAlerts } = useAlertStore();
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await alertApi.list();
+        const mapped = (Array.isArray(data) ? data : []).map((a: any) => ({
+          id: String(a.id),
+          type: a.alert_type || a.type || 'approved',
+          paymentId: String(a.payment_id || ''),
+          message: a.message,
+          timestamp: a.created_at || a.timestamp || new Date().toISOString(),
+          read: a.is_read ?? a.read ?? false,
+        }));
+        if (mapped.length > 0) setAlerts(mapped);
+      } catch {
+        // keep mock data in demo mode
+      }
+    };
+    load();
+  }, [setAlerts]);
 
   const handleMarkRead = async (id: string) => {
     try {

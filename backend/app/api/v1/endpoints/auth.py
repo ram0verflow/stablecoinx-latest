@@ -44,6 +44,21 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)) -> Any:
     access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
     return {"access_token": access_token, "token_type": "bearer", "user": user}
 
+from pydantic import BaseModel
+
+class PreferenceUpdate(BaseModel):
+    ai_preference: str
+
 @router.get("/me", response_model=UserResponse)
 def read_user_me(current_user: User = Depends(get_current_user)) -> Any:
     return current_user
+
+@router.patch("/me/preference")
+def update_preference(
+    pref: PreferenceUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    current_user.ai_preference = pref.ai_preference
+    db.commit()
+    return {"status": "success", "ai_preference": current_user.ai_preference}

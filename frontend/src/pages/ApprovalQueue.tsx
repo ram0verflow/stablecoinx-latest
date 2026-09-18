@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ClipboardCheck, Filter, ChevronDown, ThumbsUp, ThumbsDown, ArrowUpRight,
+  Filter, ThumbsUp, ThumbsDown, ArrowUpRight,
   X, Eye, Clock,
 } from 'lucide-react';
 import { usePaymentStore } from '../store/paymentStore';
@@ -12,7 +12,7 @@ import { StatusBadge, RiskBadge } from '../components/StatusBadge';
 import type { Payment } from '../types';
 
 export const ApprovalQueue: React.FC = () => {
-  const { payments, updateStatus } = usePaymentStore();
+  const { payments, updateStatus, setPayments } = usePaymentStore();
   const { canApprove } = useAuthStore();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -21,6 +21,42 @@ export const ApprovalQueue: React.FC = () => {
   const [corridorFilter, setCorridorFilter] = useState<string>('all');
   const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [isRejectShake, setIsRejectShake] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    const fetchPending = async () => {
+      try {
+        // Fetch ALL payments (not just pending) so the queue shows real data
+        const res = await paymentApi.list();
+        const mapped = (res.data || []).map((p: any) => ({
+          id: String(p.id),
+          senderCompany: p.sender_company ?? p.senderCompany ?? '',
+          receiverCompany: p.receiver_company ?? p.receiverCompany ?? '',
+          sourceCountry: p.source_country ?? p.sourceCountry ?? '',
+          destinationCountry: p.destination_country ?? p.destinationCountry ?? '',
+          sourceChain: p.source_chain ?? p.sourceChain ?? 'Base Sepolia',
+          destinationChain: p.destination_chain ?? p.destinationChain ?? 'Base Sepolia',
+          amount: Number(p.amount),
+          token: p.token ?? 'USDC',
+          purpose: p.purpose ?? '',
+          urgency: p.urgency ?? 'Medium',
+          status: p.status ?? 'pending',
+          corridor: `${p.source_country ?? p.sourceCountry ?? ''} → ${p.destination_country ?? p.destinationCountry ?? ''}`,
+          riskScore: 45,
+          aiDecision: 'PENDING',
+          createdAt: p.created_at ?? p.createdAt ?? new Date().toISOString(),
+          updatedAt: p.updated_at ?? p.updatedAt ?? new Date().toISOString(),
+        }));
+        if (mapped.length) setPayments(mapped);
+      } catch {
+        // ignore in demo mode
+      }
+    };
+    fetchPending();
+    const timer = setInterval(fetchPending, 15_000);
+    return () => clearInterval(timer);
+  }, [setPayments]);
 
   const pendingPayments = payments.filter((p) => {
     const statusMatch = statusFilter === 'all' || p.status === statusFilter;
@@ -37,9 +73,17 @@ export const ApprovalQueue: React.FC = () => {
       else if (action === 'reject') await paymentApi.reject(id);
       else await paymentApi.escalate(id);
     } catch { /* demo */ }
-    const statusMap = { approve: 'approved' as const, reject: 'blocked' as const, escalate: 'review' as const };
+    const statusMap = { approve: 'approved' as const, reject: 'blocked' as const, escalate: 'under_review' as const };
     updateStatus(id, statusMap[action]);
     setSelectedPayment(null);
+    if (action === 'approve') {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 1200);
+    }
+    if (action === 'reject') {
+      setIsRejectShake(true);
+      setTimeout(() => setIsRejectShake(false), 500);
+    }
     const labels = { approve: 'Approved', reject: 'Rejected', escalate: 'Escalated' };
     showToast(action === 'reject' ? 'error' : 'success', `Payment ${labels[action]}`, `${id} has been ${labels[action].toLowerCase()}`);
   };
@@ -56,9 +100,13 @@ export const ApprovalQueue: React.FC = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="page-title">Approval Queue</h1>
-          <p className="text-sm text-slate-500 mt-1">{pendingPayments.length} payments in queue</p>
+          <p className="text-sm text-slate-500 mt-1">
+            {pendingPayments.length} payments in queue
+            <span className="ml-2 px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-xs">{pendingPayments.length}</span>
+          </p>
         </div>
       </div>
+      {showConfetti && <div className="text-center text-emerald-300 text-xs">🎉 Payment approved successfully</div>}
 
       {/* Filters */}
       <div className="glass-card p-4 mb-4 flex items-center gap-4">
@@ -67,7 +115,7 @@ export const ApprovalQueue: React.FC = () => {
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="select-field !py-2 text-xs !w-40">
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
-            <option value="review">Review</option>
+            <option value="under_review">Review</option>
             <option value="approved">Approved</option>
             <option value="blocked">Blocked</option>
           </select>
@@ -88,7 +136,7 @@ export const ApprovalQueue: React.FC = () => {
 
       <div className="flex gap-4">
         {/* Table */}
-        <div className={`glass-card overflow-hidden flex-1 transition-all duration-300 ${selectedPayment ? 'w-3/5' : 'w-full'}`}>
+        <div className={`glass-card overflow-hidden flex-1 transition-all duration-300 ${selectedPayment ? 'w-3/5' : 'w-full'} ${isRejectShake ? 'animate-pulse' : ''}`}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

@@ -3,9 +3,11 @@ import type { PaymentStatus, AlertType, UserRole } from '../types';
 
 const statusStyles: Record<PaymentStatus, string> = {
   pending: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  under_review: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
   approved: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
   blocked: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-  settled: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+  executed: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+  failed: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
   review: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
   revalidation: 'bg-violet-500/15 text-violet-400 border-violet-500/30',
 };
@@ -15,6 +17,9 @@ const alertStyles: Record<AlertType, string> = {
   blocked: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
   review: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
   revalidation: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+  review_needed: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  settlement_executed: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+  settlement_failed: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
 };
 
 const roleStyles: Record<UserRole, string> = {
@@ -37,9 +42,16 @@ export const AlertBadge: React.FC<{ type: AlertType }> = ({ type }) => (
   </span>
 );
 
-export const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => (
-  <span className={`badge border ${roleStyles[role]}`}>{role}</span>
-);
+export const RoleBadge: React.FC<{ role: string }> = ({ role }) => {
+  const formattedRole = role
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ') as UserRole;
+  
+  const style = roleStyles[formattedRole] || 'bg-slate-500/15 text-slate-400 border-slate-500/30';
+  
+  return <span className={`badge border ${style}`}>{formattedRole}</span>;
+};
 
 export const RiskBadge: React.FC<{ score: number }> = ({ score }) => {
   const style =

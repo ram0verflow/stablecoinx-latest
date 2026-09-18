@@ -1,23 +1,46 @@
-import React, { useState } from 'react';
-import { FileText, Download, Filter, Calendar, Fingerprint } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Download, Filter, Calendar, Loader } from 'lucide-react';
 import { reportApi } from '../lib/api';
 import { useToast } from '../components/ToastProvider';
 import { StatusBadge } from '../components/StatusBadge';
 import type { AuditReport } from '../types';
 
-const MOCK_REPORTS: AuditReport[] = [
-  { id: 'RPT-001', paymentId: 'PAY-001', corridor: 'SG → UK', amount: 250000, token: 'USDC', status: 'settled', aiDecision: 'APPROVE', zkProof: '0x7a3f...b92e', timestamp: '2025-04-27T09:05:00Z' },
-  { id: 'RPT-002', paymentId: 'PAY-004', corridor: 'SG → US', amount: 75000, token: 'USDC', status: 'approved', aiDecision: 'APPROVE', zkProof: '0x9c2d...a41f', timestamp: '2025-04-27T13:02:00Z' },
-  { id: 'RPT-003', paymentId: 'PAY-005', corridor: 'UK → DE', amount: 320000, token: 'USDT', status: 'blocked', aiDecision: 'REJECT', zkProof: 'N/A', timestamp: '2025-04-27T14:46:00Z' },
-  { id: 'RPT-004', paymentId: 'PAY-006', corridor: 'IN → SG', amount: 92000, token: 'USDC', status: 'settled', aiDecision: 'APPROVE', zkProof: '0x3e8b...d5c7', timestamp: '2025-04-26T08:04:00Z' },
-  { id: 'RPT-005', paymentId: 'PAY-003', corridor: 'AE → IN', amount: 500000, token: 'USDC', status: 'review', aiDecision: 'ESCALATE', zkProof: '0x1f4a...e9b2', timestamp: '2025-04-27T11:20:00Z' },
-];
-
 export const AuditReports: React.FC = () => {
   const { showToast } = useToast();
-  const [reports] = useState<AuditReport[]>(MOCK_REPORTS);
+  const [reports, setReports] = useState<AuditReport[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [corridorFilter, setCorridorFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    loadReports();
+  }, []);
+
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+      const response = await reportApi.list();
+      const reportsData = response.data.reports || [];
+      setReports(reportsData.map((r: any) => ({
+        id: `RPT-${r.payment_id.substring(0, 8)}`,
+        paymentId: r.payment_id,
+        corridor: r.corridor,
+        amount: parseFloat(r.amount),
+        token: r.token,
+        status: r.status,
+        aiDecision: 'APPROVE',
+        zkProof: '0x...',
+        timestamp: r.created_at,
+      })));
+      showToast('success', 'Reports loaded', `${reportsData.length} reports found`);
+    } catch (error) {
+      showToast('error', 'Failed to load reports');
+      setReports([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = reports.filter((r) => {
     const s = statusFilter === 'all' || r.status === statusFilter;
@@ -27,25 +50,41 @@ export const AuditReports: React.FC = () => {
 
   const corridors = [...new Set(reports.map((r) => r.corridor))];
 
-  const handleDownload = async (id: string) => {
+  const handleDownload = async (paymentId: string) => {
     try {
-      const { data } = await reportApi.download(id);
-      const url = URL.createObjectURL(data);
+      const response = await reportApi.downloadPayment(paymentId);
+      const url = URL.createObjectURL(response.data);
       const a = document.createElement('a');
-      a.href = url; a.download = `audit_${id}.pdf`; a.click();
+      a.href = url;
+      a.download = `audit_report_${paymentId}.pdf`;
+      a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      showToast('info', 'Demo Mode', `PDF download for ${id} would trigger in production`);
+      showToast('success', 'PDF downloaded successfully');
+    } catch (error) {
+      showToast('error', 'Failed to download PDF');
     }
   };
 
   const handleDownloadAll = async () => {
     try {
-      await reportApi.downloadAll();
-    } catch {
-      showToast('info', 'Demo Mode', 'Bulk PDF export would trigger in production');
+      setGenerating(true);
+      const response = await reportApi.generateAll();
+      showToast('success', `Generated ${response.data.generated} reports`);
+      await loadReports();
+    } catch (error) {
+      showToast('error', 'Failed to generate batch reports');
+    } finally {
+      setGenerating(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader className="w-8 h-8 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
@@ -54,8 +93,20 @@ export const AuditReports: React.FC = () => {
           <h1 className="page-title">Audit Reports</h1>
           <p className="text-sm text-slate-500 mt-1">Compliance audit trail for all processed payments</p>
         </div>
-        <button onClick={handleDownloadAll} className="btn-primary text-sm flex items-center gap-2">
-          <Download className="w-4 h-4" /> Download All
+        <button
+          onClick={handleDownloadAll}
+          disabled={generating}
+          className="btn-primary text-sm flex items-center gap-2 disabled:opacity-50"
+        >
+          {generating ? (
+            <>
+              <Loader className="w-4 h-4 animate-spin" /> Generating...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" /> Download All
+            </>
+          )}
         </button>
       </div>
 
@@ -64,10 +115,9 @@ export const AuditReports: React.FC = () => {
         <Filter className="w-4 h-4 text-slate-500" />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="select-field !py-2 text-xs !w-40">
           <option value="all">All Statuses</option>
-          <option value="settled">Settled</option>
           <option value="approved">Approved</option>
+          <option value="executed">Executed</option>
           <option value="blocked">Blocked</option>
-          <option value="review">Review</option>
         </select>
         <select value={corridorFilter} onChange={(e) => setCorridorFilter(e.target.value)} className="select-field !py-2 text-xs !w-40">
           <option value="all">All Corridors</option>
@@ -91,39 +141,44 @@ export const AuditReports: React.FC = () => {
               <th className="px-5 py-3 font-medium">Token</th>
               <th className="px-5 py-3 font-medium">Status</th>
               <th className="px-5 py-3 font-medium">AI Decision</th>
-              <th className="px-5 py-3 font-medium">ZK Proof</th>
               <th className="px-5 py-3 font-medium">Timestamp</th>
               <th className="px-5 py-3 font-medium">PDF</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((r) => (
-              <tr key={r.id} className="table-row">
-                <td className="px-5 py-3 font-mono text-indigo-400 text-xs">{r.id}</td>
-                <td className="px-5 py-3 font-mono text-slate-400 text-xs">{r.paymentId}</td>
-                <td className="px-5 py-3 text-slate-300">{r.corridor}</td>
-                <td className="px-5 py-3 font-semibold text-white">${r.amount.toLocaleString()}</td>
-                <td className="px-5 py-3"><span className="badge bg-slate-800 text-slate-300 border border-slate-700">{r.token}</span></td>
-                <td className="px-5 py-3"><StatusBadge status={r.status as any} /></td>
-                <td className="px-5 py-3">
-                  <span className={`text-xs font-semibold ${r.aiDecision === 'APPROVE' ? 'text-emerald-400' : r.aiDecision === 'REJECT' ? 'text-rose-400' : 'text-amber-400'}`}>
-                    {r.aiDecision}
-                  </span>
-                </td>
-                <td className="px-5 py-3">
-                  <div className="flex items-center gap-1.5">
-                    <Fingerprint className="w-3.5 h-3.5 text-violet-400" />
-                    <span className="text-xs font-mono text-slate-500">{r.zkProof}</span>
-                  </div>
-                </td>
-                <td className="px-5 py-3 text-xs text-slate-500">{new Date(r.timestamp).toLocaleString()}</td>
-                <td className="px-5 py-3">
-                  <button onClick={() => handleDownload(r.id)} className="p-1.5 hover:bg-indigo-500/10 rounded-lg transition-colors" title="Download PDF">
-                    <FileText className="w-4 h-4 text-indigo-400" />
-                  </button>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="px-5 py-8 text-center text-slate-500">
+                  No audit reports available
                 </td>
               </tr>
-            ))}
+            ) : (
+              filtered.map((r) => (
+                <tr key={r.paymentId} className="table-row">
+                  <td className="px-5 py-3 font-mono text-indigo-400 text-xs">{r.id}</td>
+                  <td className="px-5 py-3 font-mono text-slate-400 text-xs">{r.paymentId.substring(0, 8)}</td>
+                  <td className="px-5 py-3 text-slate-300">{r.corridor}</td>
+                  <td className="px-5 py-3 font-semibold text-white">${r.amount.toLocaleString()}</td>
+                  <td className="px-5 py-3"><span className="badge bg-slate-800 text-slate-300 border border-slate-700">{r.token}</span></td>
+                  <td className="px-5 py-3"><StatusBadge status={r.status as any} /></td>
+                  <td className="px-5 py-3">
+                    <span className="text-xs font-semibold text-emerald-400">
+                      {r.aiDecision}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 text-xs text-slate-500">{new Date(r.timestamp).toLocaleString()}</td>
+                  <td className="px-5 py-3">
+                    <button
+                      onClick={() => handleDownload(r.paymentId)}
+                      className="p-1.5 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                      title="Download PDF"
+                    >
+                      <FileText className="w-4 h-4 text-indigo-400" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

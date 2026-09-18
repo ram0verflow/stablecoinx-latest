@@ -15,9 +15,9 @@ class AIDecisionType(str, PyEnum):
     direct_transfer = "direct_transfer"
     alternate_chain = "alternate_chain"
     alternate_token = "alternate_token"
-    delay = "delay"
-    split = "split"
-    review = "review"
+    delay_transfer = "delay_transfer"
+    split_payment = "split_payment"
+    manual_review = "manual_review"
     block = "block"
 
 
@@ -42,8 +42,17 @@ class ComplianceDecision(Base):
     issuer_risk_result = Column(JSON, nullable=True)
     chain_governance_result = Column(JSON, nullable=True)
     liquidity_result = Column(JSON, nullable=True)
+    
     ai_decision = Column(Enum(AIDecisionType), nullable=True)
     ai_reasoning = Column(Text, nullable=True)
+    ai_confidence = Column(String(50), nullable=True) # or Float
+    ai_flags = Column(JSON, nullable=True)
+    ai_alternatives = Column(JSON, nullable=True)
+    ai_engine_used = Column(String(50), nullable=True)
+    ai_prompt_tokens = Column(String(50), nullable=True)
+    ai_latency_ms = Column(String(50), nullable=True)
+    ai_risk_summary = Column(Text, nullable=True)
+    
     fhe_check_result = Column(JSON, nullable=True)
     zk_proof_reference = Column(Text, nullable=True)
     policy_version = Column(String(255), nullable=True)

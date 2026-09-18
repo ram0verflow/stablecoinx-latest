@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
-    Column, String, Numeric, DateTime, Enum, ForeignKey,
+    Column, String, Numeric, DateTime, Enum, ForeignKey, Text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -17,6 +17,7 @@ class PaymentStatus(str, PyEnum):
     approved = "approved"
     rejected = "rejected"
     executed = "executed"
+    failed = "failed"
     blocked = "blocked"
     revalidation = "revalidation"
 
@@ -34,7 +35,12 @@ class PaymentIntent(Base):
     amount = Column(Numeric(precision=20, scale=6), nullable=False)
     token = Column(String(10), nullable=False)  # USDC / USDT
     purpose = Column(String(255), nullable=False)
+    sender_wallet = Column(String(42), nullable=True)
+    receiver_wallet = Column(String(42), nullable=True)
     urgency = Column(String(20), nullable=False, default="medium")
+    intent_hash = Column(String(64), nullable=True, index=True)
+    executed_at = Column(DateTime(timezone=True), nullable=True)
+    revert_reason = Column(Text, nullable=True)
     status = Column(
         Enum(PaymentStatus),
         nullable=False,

@@ -29,6 +29,7 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False, default=UserRole.reviewer)
     is_active = Column(Boolean, default=True)
     wallet_address = Column(String(42), nullable=True)
+    ai_preference = Column(String(50), default="ollama")
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

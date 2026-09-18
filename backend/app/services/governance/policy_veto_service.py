@@ -1,0 +1,41 @@
+from app.models.compliance_decisions import FinalDecision
+
+def apply_veto(pipeline_results: dict, ai_decision: str) -> FinalDecision:
+    # Extract results
+    country_policy = pipeline_results.get("country_policy", {})
+    treasury_controls = pipeline_results.get("treasury_controls", {})
+    compliance = pipeline_results.get("compliance", {})
+    wallet_graph = pipeline_results.get("wallet_graph", {})
+    
+    # Rules:
+    # If country_policy is_allowed=False → BLOCK regardless of AI
+    if not country_policy.get("is_allowed", False):
+        return FinalDecision.blocked
+        
+    # If sanctions_hit=True → BLOCK regardless of AI
+    if compliance.get("sanctions_hit", False):
+        return FinalDecision.blocked
+        
+    # If internal_blacklist_hit=True → BLOCK regardless of AI
+    if compliance.get("internal_blacklist_hit", False):
+        return FinalDecision.blocked
+        
+    # If wallet risk_score > 0.8 → force REVIEW regardless of AI
+    if wallet_graph.get("risk_score", 0.0) > 0.8:
+        return FinalDecision.pending_review
+        
+    # If dual_approval_required=True → force REVIEW
+    if treasury_controls.get("dual_approval_required", False):
+        return FinalDecision.pending_review
+        
+    # Otherwise → use AI decision (map it to FinalDecision)
+    ai_decision = ai_decision.lower()
+    if ai_decision == "block":
+        return FinalDecision.blocked
+    elif ai_decision == "review":
+        return FinalDecision.pending_review
+    elif ai_decision in ["direct_transfer", "alternate_chain", "alternate_token", "approved", "pass", "approve"]:
+        return FinalDecision.approved
+    
+    # Default fallback
+    return FinalDecision.pending_review

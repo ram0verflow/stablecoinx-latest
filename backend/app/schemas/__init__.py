@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 from enum import Enum
 
@@ -21,6 +21,7 @@ class PaymentStatusEnum(str, Enum):
     approved = "approved"
     rejected = "rejected"
     executed = "executed"
+    failed = "failed"
     blocked = "blocked"
     revalidation = "revalidation"
 
@@ -29,9 +30,9 @@ class AIDecisionEnum(str, Enum):
     direct_transfer = "direct_transfer"
     alternate_chain = "alternate_chain"
     alternate_token = "alternate_token"
-    delay = "delay"
-    split = "split"
-    review = "review"
+    delay_transfer = "delay_transfer"
+    split_payment = "split_payment"
+    manual_review = "manual_review"
     block = "block"
 
 
@@ -53,6 +54,8 @@ class AlertTypeEnum(str, Enum):
     blocked = "blocked"
     review_needed = "review_needed"
     revalidation_triggered = "revalidation_triggered"
+    settlement_executed = "settlement_executed"
+    settlement_failed = "settlement_failed"
 
 
 class RevalidationStatusEnum(str, Enum):
@@ -81,6 +84,7 @@ class UserResponse(BaseModel):
     role: UserRoleEnum
     is_active: bool
     wallet_address: Optional[str] = None
+    ai_preference: Optional[str] = "ollama"
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -100,7 +104,7 @@ class PaymentCreate(BaseModel):
     destination_country: str = Field(..., alias="destinationCountry")
     source_chain: str = Field(..., alias="sourceChain")
     destination_chain: str = Field(..., alias="destinationChain")
-    amount: float
+    amount: float = Field(..., gt=0, le=10_000_000)
     token: str
     purpose: str
     urgency: str = "Medium"
@@ -122,6 +126,11 @@ class PaymentResponse(BaseModel):
     urgency: str
     status: PaymentStatusEnum
     created_by: UUID
+    sender_wallet: Optional[str] = None
+    receiver_wallet: Optional[str] = None
+    intent_hash: Optional[str] = None
+    executed_at: Optional[datetime] = None
+    revert_reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -143,6 +152,12 @@ class ComplianceDecisionResponse(BaseModel):
     liquidity_result: Optional[dict] = None
     ai_decision: Optional[AIDecisionEnum] = None
     ai_reasoning: Optional[str] = None
+    ai_confidence: Optional[str] = None
+    ai_flags: Optional[list] = None
+    ai_alternatives: Optional[list] = None
+    ai_engine_used: Optional[str] = None
+    ai_latency_ms: Optional[str] = None
+    ai_risk_summary: Optional[str] = None
     fhe_check_result: Optional[dict] = None
     zk_proof_reference: Optional[str] = None
     policy_version: Optional[str] = None
@@ -242,3 +257,29 @@ class HealthResponse(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+# ── Monitoring Schemas ────────────────────────────────────────
+class CorridorStats(BaseModel):
+    corridor: str
+    count: int
+    block_rate: float
+
+
+class RpcStatus(BaseModel):
+    base_sepolia: bool
+    polygon_amoy: bool
+
+
+class MonitoringStats(BaseModel):
+    total_payments: int
+    approved_today: int
+    blocked_today: int
+    pending_review: int
+    avg_ai_latency_ms: float
+    tx_success_rate: float
+    top_corridors: List[Dict[str, Any]]
+    ai_engine_status: str
+    rpc_status: Dict[str, bool]
+    neo4j_status: bool
+    redis_status: bool

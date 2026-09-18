@@ -1,19 +1,43 @@
-# Environment
+# Environment — never commit secrets
 .env
+*.env
+!.env.example
 
 # Node
-node_modules
+node_modules/
 
 # Python
-__pycache__
-.pytest_cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
 
-# Foundry
+# SQLite databases — contain local data, not for repo
+*.db
+*.sqlite
+*.sqlite3
+
+# Foundry build artifacts
 out/
 cache/
 
-# Build
+# Build output
 dist/
+build/
 
 # OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+/tmp/
+
+# Test artifacts
+.coverage
+htmlcov/
