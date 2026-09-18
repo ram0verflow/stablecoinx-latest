@@ -103,6 +103,14 @@ class Settings(BaseSettings):  # FIXED: C3
     BEECEPTOR_OBFUSCATION_URL: str = Field("")
     BEECEPTOR_OBFUSCATION_TIMEOUT_SECONDS: float = 5.0
 
+    # Mixer Signals (EVM/Tron) — Tron path uses TronScan's genuinely free,
+    # keyless public API. EVM chains (Base/Polygon/BSC/Ethereum) are all
+    # Etherscan-family and, since the V1->V2 migration, require a registered
+    # API key even on free tier — no key means the EVM path honestly reports
+    # unavailable rather than faking a result. See services/mixer_signals/.
+    ETHERSCAN_API_KEY: str = Field("")
+    MIXER_SIGNALS_TIMEOUT_SECONDS: float = 8.0
+
     model_config = {  # FIXED: C3
         "env_file": (".env", "../.env"),  # FIXED: C3
         "env_file_encoding": "utf-8",  # FIXED: C3

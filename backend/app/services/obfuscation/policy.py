@@ -46,6 +46,12 @@ def policy_message_for(recommendation: str) -> str:
     return _OVERRIDE_PREFIX.get(recommendation, "") + POLICY_MESSAGE
 
 
+# Kept in sync with tools/obfuscation_classifier/rules.py's protocol
+# constants (Phase 3: generalized beyond Whirlpool-only to also cover
+# Wasabi 2.0/WabiSabi, both real-dataset-validated — see VALIDATION_NOTES.md).
+_KNOWN_PROTOCOLS = {"WHIRLPOOL_LEGACY", "WABISABI_LIKE"}
+
+
 def classifier_based_recommendation(protocol: str, obfuscation_confidence: str, classification: str) -> str:
     """
     Phase C's own two explicit rules, plus one deterministic middle bucket
@@ -54,9 +60,9 @@ def classifier_based_recommendation(protocol: str, obfuscation_confidence: str, 
     "uncertainty is not clearance", so this must not silently become
     NO_OBFUSCATION_ACTION).
     """
-    if protocol == "WHIRLPOOL_LEGACY" and obfuscation_confidence in ("HIGH", "MEDIUM"):
+    if protocol in _KNOWN_PROTOCOLS and obfuscation_confidence in ("HIGH", "MEDIUM"):
         return ENHANCED_REVIEW
-    if classification == "NOT_WHIRLPOOL":
+    if classification == "NOT_COINJOIN":
         return NO_OBFUSCATION_ACTION
     return INFORMATIONAL_ONLY
 

@@ -5,14 +5,15 @@ import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ToastProvider';
 import { getStatusTone, type Tone } from '../components/StatusBadge';
 import { IcArrowRight, IcLock, IcAlertCircle } from '../components/scx/icons';
-import { ObfuscationPanel } from '../components/ObfuscationPanel';
-import { getObfuscationDemoForPayment } from '../lib/obfuscationDemoPayments';
+import { MixerSignalPanel } from '../components/MixerSignalPanel';
 
 interface PipelineStage { label: string; passed: boolean; status: string; detail: string }
 interface PaymentDetails {
   id: string; status: string;
   sender_company?: string; receiver_company?: string;
-  source_country?: string; destination_country?: string; destination_chain?: string;
+  source_country?: string; destination_country?: string;
+  source_chain?: string; destination_chain?: string;
+  sender_wallet?: string; receiver_wallet?: string;
   amount?: number; token?: string; created_at?: string;
   pipeline_stages?: Record<string, PipelineStage>;
   compliance_decision?: { final_decision?: string; ai_decision?: string; ai_reasoning?: string } | null;
@@ -55,7 +56,6 @@ export const RouteAnalysis: React.FC = () => {
   const [isPolling, setIsPolling] = useState(true);
   const [view, setView] = useState<'trace' | 'flow'>('trace');
   const [acting, setActing] = useState(false);
-  const obfuscationDemo = paymentId ? getObfuscationDemoForPayment(paymentId) : undefined;
 
   useEffect(() => {
     if (!paymentId) return;
@@ -220,10 +220,11 @@ export const RouteAnalysis: React.FC = () => {
         </div>
       )}
 
-      {view === 'trace' && obfuscationDemo && (
+      {view === 'trace' && payment && (
         <>
-          <div className="sec-label" style={{ marginTop: 18 }}>Compliance & Risk — Obfuscation Intelligence</div>
-          <ObfuscationPanel mode="compact" defaultTxid={obfuscationDemo.txid} />
+          <div className="sec-label" style={{ marginTop: 18 }}>Compliance & Risk — Mixer Signal Intelligence</div>
+          <MixerSignalPanel address={payment.sender_wallet} chain={payment.source_chain} label="Sender wallet" />
+          <MixerSignalPanel address={payment.receiver_wallet} chain={payment.destination_chain} label="Receiver wallet" />
         </>
       )}
 

@@ -259,10 +259,10 @@ def build_pipeline_stages(decision) -> dict:
             "passed": chain.get("is_allowed", True),
             "status": "fail" if not chain.get("is_allowed", True) else "pass",
             "detail": (
-                f"Network: {chain.get('network', 'Polygon Amoy')} | "
+                f"Network: {getattr(decision.payment, 'destination_chain', None) or 'Unknown'} | "
                 f"Bridge trust: {chain.get('bridge_trust_score', 'N/A')} | "
                 f"Regulator comfort: {chain.get('regulator_comfort', 'N/A')}"
-            ) if chain else "Network: Polygon Amoy",
+            ) if chain else "No chain governance data",
         },
         "layer_8_liquidity": {
             "label": "Liquidity & MEV Protection",

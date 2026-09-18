@@ -159,6 +159,8 @@ class ClassificationResult:
     evidence: List[ClassificationSignal] = field(default_factory=list)
     evidence_against: List[str] = field(default_factory=list)
     classification_hint: Optional[str] = None
+    checked_protocols: List[Dict[str, Any]] = field(default_factory=list)
+    chart_data: Optional[Dict[str, Any]] = None
     separate_signals: Dict[str, str] = field(
         default_factory=lambda: {
             "illicit_attribution": "NOT_EVALUATED",
@@ -183,6 +185,8 @@ class ClassificationResult:
         # shape matching the two documented sample shapes exactly.
         if self.classification_hint is not None:
             out["classification_hint"] = self.classification_hint
+        out["checked_protocols"] = self.checked_protocols
+        out["chart_data"] = self.chart_data
         out["separate_signals"] = self.separate_signals
         out["limits"] = self.limits
         out["policy_note"] = self.policy_note

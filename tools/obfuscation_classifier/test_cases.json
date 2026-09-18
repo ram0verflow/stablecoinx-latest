@@ -173,16 +173,16 @@
   {
     "txid": "66b21ea5d1d8a1f4ec026cd5e3d6efa6abf513560d3a5a6068a50c35d1a1c66f",
     "expected_family": "WHIRLPOOL_LEGACY",
-    "expected_classification": "COINJOIN_LIKE",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
     "category": "positive_whirlpool",
     "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
     "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
-    "notes": "IMPORTANT \u2014 documents a known Phase 1 scope limitation, not a bug: this is a real, dataset-confirmed Samourai Whirlpool round with 8 inputs / 8 outputs (all equal at the 0.01 BTC pool denomination). The Phase 1 rule only targets the legacy 5-input/5-output shape, so this correctly scores COINJOIN_LIKE (protocol UNKNOWN, not WHIRLPOOL_LEGACY) rather than CONFIRMED. Included deliberately so the benchmark's recall metric honestly reflects that the current rule misses larger real Whirlpool rounds \u2014 see VALIDATION_NOTES.md."
+    "notes": "Real, dataset-confirmed Samourai Whirlpool round with 8 inputs / 8 outputs (all equal at the 0.01 BTC pool denomination). Previously (Phase 2) this scored only COINJOIN_LIKE because the rule required exactly 5 inputs/outputs. The rule was widened to the 5-8 round-size range specifically because this txid \u2014 and the 163/160-sample finding that 8x8 is the MOST common real Whirlpool shape \u2014 showed the original rule structurally missed most real activity. Now correctly CONFIRMED."
   },
   {
     "txid": "dfe57d33a81720a059ceb5e84d546a05e55791b0eafca50574c9ed4c645ee575",
     "expected_family": "UNKNOWN",
-    "expected_classification": "NOT_WHIRLPOOL",
+    "expected_classification": "NOT_COINJOIN",
     "category": "ordinary_payment_negative",
     "source": "Sampled from a recent Bitcoin mainnet block via Blockstream Esplora during Phase 2 curation",
     "source_url": "https://blockstream.info/api/tx/dfe57d33a81720a059ceb5e84d546a05e55791b0eafca50574c9ed4c645ee575",
@@ -191,7 +191,7 @@
   {
     "txid": "4e624682a5b69dbd1596628eec644c0f4782ba798f2794f7177715395bca7b91",
     "expected_family": "UNKNOWN",
-    "expected_classification": "NOT_WHIRLPOOL",
+    "expected_classification": "NOT_COINJOIN",
     "category": "batching_negative",
     "source": "Sampled from a recent Bitcoin mainnet block via Blockstream Esplora during Phase 2 curation",
     "source_url": "https://blockstream.info/api/tx/4e624682a5b69dbd1596628eec644c0f4782ba798f2794f7177715395bca7b91",
@@ -200,7 +200,7 @@
   {
     "txid": "2759143d93dc0bc29170eae07ad97a9c8931b60a7b673de04ac26d9764324a38",
     "expected_family": "UNKNOWN",
-    "expected_classification": "NOT_WHIRLPOOL",
+    "expected_classification": "NOT_COINJOIN",
     "category": "consolidation_negative",
     "source": "Sampled from a recent Bitcoin mainnet block via Blockstream Esplora during Phase 2 curation",
     "source_url": "https://blockstream.info/api/tx/2759143d93dc0bc29170eae07ad97a9c8931b60a7b673de04ac26d9764324a38",
@@ -217,5 +217,95 @@
     "expected_family": "UNKNOWN",
     "category": "payjoin_caveat",
     "notes": "No verified public txid curated yet. Do not use in benchmark until replaced."
+  },
+  {
+    "txid": "567e9c3d9b45a5d3811afb7859bc9cebbc1354767fd0dd5fe91f7e2594ad7bc7",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "6-in/6-out real Whirlpool round \u2014 validates the widened round-size range at a size other than 5 or 8."
+  },
+  {
+    "txid": "91ec98c83462518e66ca68ce3c1b6a51963d1aecfeda55eb886f1ff44f08be02",
+    "expected_family": "WHIRLPOOL_LEGACY",
+    "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+    "category": "positive_whirlpool",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Samourai Whirlpool scanner output)",
+    "source_url": "https://github.com/crocs-muni/coinjoin-analysis/raw/main/tests/fixtures/dumplings__sw_202403.zip",
+    "notes": "7-in/7-out real Whirlpool round \u2014 validates the widened round-size range at a size other than 5 or 8."
+  },
+  {
+    "txid": "28a30c19a996c3493d267fdfe7bb7fd96a171a8a63a73e29db72af6e70561038",
+    "expected_family": "WABISABI_LIKE",
+    "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+    "category": "positive_wabisabi",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Wasabi 2.0/WabiSabi coordinator-attributed txid list)",
+    "source_url": "https://raw.githubusercontent.com/crocs-muni/coinjoin-analysis/main/data/wasabi2/txid_coord.json",
+    "notes": "Curated WabiSabi example #1/8: randomly sampled from the dataset's real Wasabi 2.0 coordinator-attributed txid list, then independently fetched from Blockstream and confirmed to have multiple simultaneous equal-value output clusters at round (power-of-2/3 or decimal) denominations, matching the WabiSabi structural signature. Not fabricated."
+  },
+  {
+    "txid": "c88725b7a5403f2ead7854507ebc0bb66ff5d817bf995490c6c5f7f072b7b483",
+    "expected_family": "WABISABI_LIKE",
+    "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+    "category": "positive_wabisabi",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Wasabi 2.0/WabiSabi coordinator-attributed txid list)",
+    "source_url": "https://raw.githubusercontent.com/crocs-muni/coinjoin-analysis/main/data/wasabi2/txid_coord.json",
+    "notes": "Curated WabiSabi example #2/8: randomly sampled from the dataset's real Wasabi 2.0 coordinator-attributed txid list, then independently fetched from Blockstream and confirmed to have multiple simultaneous equal-value output clusters at round (power-of-2/3 or decimal) denominations, matching the WabiSabi structural signature. Not fabricated."
+  },
+  {
+    "txid": "21621eddc897458183c266053e82503828787458bf30f3415b1ead2f152e5d74",
+    "expected_family": "WABISABI_LIKE",
+    "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+    "category": "positive_wabisabi",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Wasabi 2.0/WabiSabi coordinator-attributed txid list)",
+    "source_url": "https://raw.githubusercontent.com/crocs-muni/coinjoin-analysis/main/data/wasabi2/txid_coord.json",
+    "notes": "Curated WabiSabi example #3/8: randomly sampled from the dataset's real Wasabi 2.0 coordinator-attributed txid list, then independently fetched from Blockstream and confirmed to have multiple simultaneous equal-value output clusters at round (power-of-2/3 or decimal) denominations, matching the WabiSabi structural signature. Not fabricated."
+  },
+  {
+    "txid": "dfa8849a1b17a8182775f8f40f492490765894e2386eefda3e27f3d27cd21093",
+    "expected_family": "WABISABI_LIKE",
+    "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+    "category": "positive_wabisabi",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Wasabi 2.0/WabiSabi coordinator-attributed txid list)",
+    "source_url": "https://raw.githubusercontent.com/crocs-muni/coinjoin-analysis/main/data/wasabi2/txid_coord.json",
+    "notes": "Curated WabiSabi example #4/8: randomly sampled from the dataset's real Wasabi 2.0 coordinator-attributed txid list, then independently fetched from Blockstream and confirmed to have multiple simultaneous equal-value output clusters at round (power-of-2/3 or decimal) denominations, matching the WabiSabi structural signature. Not fabricated."
+  },
+  {
+    "txid": "b06740910bc3134bebb21521a277495a32d941b3603712421041009467444b93",
+    "expected_family": "WABISABI_LIKE",
+    "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+    "category": "positive_wabisabi",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Wasabi 2.0/WabiSabi coordinator-attributed txid list)",
+    "source_url": "https://raw.githubusercontent.com/crocs-muni/coinjoin-analysis/main/data/wasabi2/txid_coord.json",
+    "notes": "Curated WabiSabi example #5/8: randomly sampled from the dataset's real Wasabi 2.0 coordinator-attributed txid list, then independently fetched from Blockstream and confirmed to have multiple simultaneous equal-value output clusters at round (power-of-2/3 or decimal) denominations, matching the WabiSabi structural signature. Not fabricated."
+  },
+  {
+    "txid": "2a83a803d40c275d5a5472418eb91bd734b404cb85f3427840007c9d384c6105",
+    "expected_family": "WABISABI_LIKE",
+    "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+    "category": "positive_wabisabi",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Wasabi 2.0/WabiSabi coordinator-attributed txid list)",
+    "source_url": "https://raw.githubusercontent.com/crocs-muni/coinjoin-analysis/main/data/wasabi2/txid_coord.json",
+    "notes": "Curated WabiSabi example #6/8: randomly sampled from the dataset's real Wasabi 2.0 coordinator-attributed txid list, then independently fetched from Blockstream and confirmed to have multiple simultaneous equal-value output clusters at round (power-of-2/3 or decimal) denominations, matching the WabiSabi structural signature. Not fabricated."
+  },
+  {
+    "txid": "7a12a4f2db72c2c1a75ac507c67bec9f8d0c0155eaf65d07d6946056166ffb51",
+    "expected_family": "WABISABI_LIKE",
+    "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+    "category": "positive_wabisabi",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Wasabi 2.0/WabiSabi coordinator-attributed txid list)",
+    "source_url": "https://raw.githubusercontent.com/crocs-muni/coinjoin-analysis/main/data/wasabi2/txid_coord.json",
+    "notes": "Curated WabiSabi example #7/8: randomly sampled from the dataset's real Wasabi 2.0 coordinator-attributed txid list, then independently fetched from Blockstream and confirmed to have multiple simultaneous equal-value output clusters at round (power-of-2/3 or decimal) denominations, matching the WabiSabi structural signature. Not fabricated."
+  },
+  {
+    "txid": "b02b3dbc07d1e8dd10421d94339f0d7b27fd65275e7a8dc1e01801fb5208306d",
+    "expected_family": "WABISABI_LIKE",
+    "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+    "category": "positive_wabisabi",
+    "source": "crocs-muni/coinjoin-analysis (academic mainnet CoinJoin dataset, Wasabi 2.0/WabiSabi coordinator-attributed txid list)",
+    "source_url": "https://raw.githubusercontent.com/crocs-muni/coinjoin-analysis/main/data/wasabi2/txid_coord.json",
+    "notes": "Curated WabiSabi example #8/8: randomly sampled from the dataset's real Wasabi 2.0 coordinator-attributed txid list, then independently fetched from Blockstream and confirmed to have multiple simultaneous equal-value output clusters at round (power-of-2/3 or decimal) denominations, matching the WabiSabi structural signature. Not fabricated."
   }
 ]

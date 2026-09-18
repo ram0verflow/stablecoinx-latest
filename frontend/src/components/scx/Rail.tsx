@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { paymentApi, revalidationApi } from '../../lib/api';
 import {
   IcOverview, IcPayments, IcCheck, IcPolicies, IcShield, IcRevalidation,
-  IcDoc, IcIntegrations, IcInfrastructure, IcSettings,
+  IcDoc, IcIntegrations, IcInfrastructure, IcSettings, IcSearch,
 } from './icons';
 
 type NavItem = {
@@ -31,6 +31,7 @@ const NAV_GROUPS: NavGroup[] = [
     links: [
       { to: '/policies', icon: IcPolicies, label: 'Policies' },
       { to: '/compliance', icon: IcShield, label: 'Risk & Compliance' },
+      { to: '/mixer-signals', icon: IcSearch, label: 'Mixer Signals' },
       { to: '/revalidation', icon: IcRevalidation, label: 'Revalidation', roles: ['compliance_officer', 'admin', 'auditor'], countKey: 'revalidation' },
     ],
   },

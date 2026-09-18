@@ -41,7 +41,7 @@ export type PaymentStatus =
 
 export type Token = 'USDC' | 'USDT' | 'DAI' | 'BUSD' | 'TUSD';
 export type Urgency = 'Low' | 'Medium' | 'High' | 'Critical';
-export type Chain = 'Base Sepolia' | 'Polygon Amoy' | 'Ethereum Mainnet' | 'Arbitrum' | 'Optimism';
+export type Chain = 'Base Sepolia' | 'Polygon Amoy' | 'Ethereum Mainnet' | 'Arbitrum' | 'Optimism' | 'Tron';
 // FIXED: L2
 export type Country =
   | 'SG'
@@ -285,6 +285,20 @@ export interface ObfuscationProviderAttribution {
   reason?: string | null;
 }
 
+export interface ObfuscationChartData {
+  input_count: number;
+  output_count: number;
+  output_values_sats: number[];
+  unique_output_values: number[];
+  largest_equal_output_group_size: number;
+  equal_output_group_count: number;
+  total_output_sats?: number | null;
+  total_input_sats?: number | null;
+  fee_sats?: number | null;
+  block_height?: number | null;
+  block_time?: number | null;
+}
+
 export interface ObfuscationAnalyzeResult {
   txid: string;
   classification: string;
@@ -299,8 +313,20 @@ export interface ObfuscationAnalyzeResult {
   evidence: ObfuscationEvidenceSignal[];
   evidence_against: string[];
   classification_hint?: string | null;
+  checked_protocols: { protocol: string; classification: string; score: number }[];
+  chart_data?: ObfuscationChartData | null;
   limits: string[];
   source: 'cached_validation_fixture' | 'live_blockstream_fetch' | string;
+  blockstream_url: string;
+}
+
+export interface ObfuscationDemoPoolEntry {
+  result: ObfuscationAnalyzeResult;
+  category?: string | null;
+}
+
+export interface ObfuscationDemoPoolResponse {
+  pool: ObfuscationDemoPoolEntry[];
 }
 
 export interface ObfuscationValidationSnapshot {
@@ -314,4 +340,50 @@ export interface ObfuscationValidationSnapshot {
   precision?: number | null;
   recall?: number | null;
   small_sample_warning?: boolean;
+}
+
+export interface MixerPatternCheck {
+  name: string;
+  label: string;
+  matched: boolean;
+  weight: number;
+  detail: string;
+}
+
+export interface MixerSoftSignal {
+  score: number;
+  tier: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | string;
+  patterns_checked: MixerPatternCheck[];
+  distinct_out_counterparties: number;
+  distinct_in_counterparties: number;
+  incoming_count: number;
+  outgoing_count: number;
+}
+
+export interface MixerHardSignal {
+  source: string;
+  flagged: boolean | null;
+  detail: string;
+}
+
+export interface MixerRecentTransaction {
+  timestamp?: number | null;
+  direction: 'in' | 'out' | string;
+  counterparty?: string | null;
+  amount_sun?: number | null;
+  amount_wei?: string | null;
+}
+
+export interface MixerSignalResult {
+  available: boolean;
+  chain: string;
+  address: string;
+  explorer_url: string;
+  reason?: string | null;
+  source?: string | null;
+  sample_size?: number | null;
+  total_tx_count?: number | null;
+  hard_signal?: MixerHardSignal | null;
+  soft_signal?: MixerSoftSignal | null;
+  recent_transactions: MixerRecentTransaction[];
 }

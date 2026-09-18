@@ -39,21 +39,28 @@ TEST_CASES_PATH = HERE / "test_cases.json"
 REPORT_JSON_PATH = HERE / "benchmark_report.json"
 REPORT_MD_PATH = HERE / "benchmark_report.md"
 
-POSITIVE_CLASSIFICATIONS = {"CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN", "LIKELY_WHIRLPOOL_LEGACY_COINJOIN"}
+# Generalized (Phase 3) beyond Whirlpool-only — any specific-protocol
+# CONFIRMED/LIKELY match counts as a positive detection now.
+POSITIVE_CLASSIFICATIONS = {
+    "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN", "LIKELY_WHIRLPOOL_LEGACY_COINJOIN",
+    "CONFIRMED_WABISABI_COINJOIN", "LIKELY_WABISABI_COINJOIN",
+}
+KNOWN_PROTOCOLS = {"WHIRLPOOL_LEGACY", "WABISABI_LIKE"}
 
 CLAIM = (
-    "StableCoinX performs protocol-aware Whirlpool-style CoinJoin identification from "
-    "transaction structure. This is identification, not unmixing, not user attribution, "
-    "and not illicit attribution."
+    "StableCoinX performs protocol-aware CoinJoin identification (legacy Samourai "
+    "Whirlpool and Wasabi 2.0/WabiSabi) from transaction structure, plus a "
+    "protocol-agnostic fallback for other equal-output CoinJoin-like activity. This "
+    "is identification, not unmixing, not user attribution, and not illicit attribution."
 )
 
 
 def is_predicted_positive(protocol: str, classification: str) -> bool:
-    return protocol == "WHIRLPOOL_LEGACY" and classification in POSITIVE_CLASSIFICATIONS
+    return protocol in KNOWN_PROTOCOLS and classification in POSITIVE_CLASSIFICATIONS
 
 
 def is_expected_positive(expected_family: str) -> bool:
-    return expected_family == "WHIRLPOOL_LEGACY"
+    return expected_family in KNOWN_PROTOCOLS
 
 
 def run_benchmark() -> Dict[str, Any]:
@@ -150,7 +157,7 @@ def run_benchmark() -> Dict[str, Any]:
         "error_cases": len(error_rows),
         "correct_count": correct_count,
         "incorrect_count": incorrect_count,
-        "whirlpool_positive_detection": {
+        "coinjoin_positive_detection": {
             "true_positives": tp,
             "false_positives": fp,
             "false_negatives": fn,
@@ -184,9 +191,9 @@ def print_table(report: Dict[str, Any]) -> None:
     print(f"Errors:                   {report['error_cases']}")
     print(f"Correct:                  {report['correct_count']}")
     print(f"Incorrect:                {report['incorrect_count']}")
-    wp = report["whirlpool_positive_detection"]
-    print(f"Whirlpool-positive precision: {wp['precision']}")
-    print(f"Whirlpool-positive recall:    {wp['recall']}")
+    wp = report["coinjoin_positive_detection"]
+    print(f"CoinJoin-positive precision: {wp['precision']}")
+    print(f"CoinJoin-positive recall   :    {wp['recall']}")
     print(f"  TP={wp['true_positives']} FP={wp['false_positives']} "
           f"FN={wp['false_negatives']} TN={wp['true_negatives']}")
     if report["SMALL_SAMPLE_WARNING"]:
@@ -195,7 +202,7 @@ def print_table(report: Dict[str, Any]) -> None:
 
 
 def write_markdown_report(report: Dict[str, Any]) -> str:
-    wp = report["whirlpool_positive_detection"]
+    wp = report["coinjoin_positive_detection"]
     lines = [
         "# Obfuscation Classifier — Benchmark Report",
         "",
@@ -216,7 +223,7 @@ def write_markdown_report(report: Dict[str, Any]) -> str:
         f"- Correct (predicted classification == expected): {report['correct_count']}",
         f"- Incorrect: {report['incorrect_count']}",
         "",
-        "## Whirlpool positive detection (structure-based, 5x5-legacy-rule scope only)",
+        "## CoinJoin positive detection (Whirlpool + WabiSabi, structure-based)",
         "",
         f"- True positives: {wp['true_positives']}",
         f"- False positives: {wp['false_positives']}",

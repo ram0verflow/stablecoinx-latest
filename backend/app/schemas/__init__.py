@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, root_validator, validator
 
 
 # ── Enums ─────────────────────────────────────────────────────
@@ -130,16 +130,30 @@ class PaymentCreate(BaseModel):
     token: str
     purpose: str
     urgency: str = "Medium"
-    receiver_wallet: str = Field(..., alias="receiverWallet", min_length=42, max_length=42)
+    receiver_wallet: str = Field(..., alias="receiverWallet", min_length=26, max_length=42)
     sender_wallet: Optional[str] = Field(None, alias="senderWallet")
 
-    @validator("receiver_wallet")
-    def validate_receiver_wallet(cls, v: str) -> str:
+    @root_validator(skip_on_failure=True)
+    def validate_wallet_formats(cls, values: dict) -> dict:
         import re
-        v = v.strip()
-        if not re.fullmatch(r"0x[a-fA-F0-9]{40}", v):
-            raise ValueError("receiver_wallet must be a valid Ethereum address (0x + 40 hex chars)")
-        return v
+
+        evm_re = re.compile(r"^0x[a-fA-F0-9]{40}$")
+        tron_re = re.compile(r"^T[1-9A-HJ-NP-Za-km-z]{33}$")
+
+        def _check(wallet: Optional[str], chain: str, field_name: str) -> Optional[str]:
+            if wallet is None:
+                return None
+            wallet = wallet.strip()
+            is_tron_chain = (chain or "").strip().lower() in {"tron", "trx"}
+            pattern = tron_re if is_tron_chain else evm_re
+            if not pattern.fullmatch(wallet):
+                expected = "a Tron address (T + 33 base58 chars)" if is_tron_chain else "an Ethereum address (0x + 40 hex chars)"
+                raise ValueError(f"{field_name} must be {expected} for chain '{chain}'")
+            return wallet
+
+        values["receiver_wallet"] = _check(values.get("receiver_wallet"), values.get("destination_chain", ""), "receiver_wallet")
+        values["sender_wallet"] = _check(values.get("sender_wallet"), values.get("source_chain", ""), "sender_wallet")
+        return values
 
     model_config = {"populate_by_name": True}
 

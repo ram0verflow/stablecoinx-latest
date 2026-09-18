@@ -7,7 +7,9 @@ import type {
   Alert,
   MonitoringStats,
   ObfuscationAnalyzeResult,
+  ObfuscationDemoPoolResponse,
   ObfuscationValidationSnapshot,
+  MixerSignalResult,
 } from '../types';
 import { getStoredToken, removeStoredAuth } from './authStorage'; // FIXED: A5
 import { useAuthStore } from '../store/authStore'; // FIXED: A5 — clear Zustand on 401
@@ -137,7 +139,13 @@ export const obfuscationApi = {
   analyze: (txid: string, chain: string = 'bitcoin') =>
     api.post<ObfuscationAnalyzeResult>('/obfuscation/analyze', { txid, chain }),
   demoTxids: () => api.get<{ txids: string[] }>('/obfuscation/demo-txids'),
+  demoPool: () => api.get<ObfuscationDemoPoolResponse>('/obfuscation/demo-pool'),
   validationSnapshot: () => api.get<ObfuscationValidationSnapshot>('/obfuscation/validation-snapshot'),
+};
+
+export const mixerSignalsApi = {
+  analyze: (address: string, chain: string) =>
+    api.get<MixerSignalResult>('/mixer-signals/analyze', { params: { address, chain } }),
 };
 
 export default api;

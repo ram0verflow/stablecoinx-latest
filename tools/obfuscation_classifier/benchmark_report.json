@@ -1,27 +1,29 @@
 {
-  "generated_at": "2026-09-18T18:31:18.289826+00:00",
-  "claim": "StableCoinX performs protocol-aware Whirlpool-style CoinJoin identification from transaction structure. This is identification, not unmixing, not user attribution, and not illicit attribution.",
-  "total_cases_in_file": 25,
+  "generated_at": "2026-09-18T20:05:58.808476+00:00",
+  "claim": "StableCoinX performs protocol-aware CoinJoin identification (legacy Samourai Whirlpool and Wasabi 2.0/WabiSabi) from transaction structure, plus a protocol-agnostic fallback for other equal-output CoinJoin-like activity. This is identification, not unmixing, not user attribution, and not illicit attribution.",
+  "total_cases_in_file": 35,
   "skipped_todo_cases": 2,
-  "total_runnable_cases": 20,
-  "error_cases": 3,
-  "correct_count": 20,
+  "total_runnable_cases": 33,
+  "error_cases": 0,
+  "correct_count": 33,
   "incorrect_count": 0,
-  "whirlpool_positive_detection": {
-    "true_positives": 16,
+  "coinjoin_positive_detection": {
+    "true_positives": 30,
     "false_positives": 0,
-    "false_negatives": 1,
+    "false_negatives": 0,
     "true_negatives": 3,
     "precision": 1.0,
-    "recall": 0.9412
+    "recall": 1.0
   },
   "confusion_expected_family_vs_predicted_protocol": {
     "WHIRLPOOL_LEGACY": {
-      "WHIRLPOOL_LEGACY": 16,
-      "UNKNOWN": 1
+      "WHIRLPOOL_LEGACY": 22
     },
     "UNKNOWN": {
       "UNKNOWN": 3
+    },
+    "WABISABI_LIKE": {
+      "WABISABI_LIKE": 8
     }
   },
   "rows": [
@@ -38,6 +40,17 @@
     },
     {
       "txid": "b8593dad70162185d070f86e00a208d334411114f749629869a8d6ffe9162087",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "da9dffbda2b3158565667bca071ab4f438be84e7f313ba71a426fe6de4281cc5",
       "category": "positive_whirlpool",
       "expected_family": "WHIRLPOOL_LEGACY",
       "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
@@ -81,6 +94,17 @@
       "outcome": "TP"
     },
     {
+      "txid": "240fbc0a1f225e4266b86d351a099ae4fd28bbb2d628960fae11e5481a9d43d0",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
       "txid": "c03cf94b845573517ccef6308e40822ad8dab77bde9a52bf92c5bc55ead6ed09",
       "category": "positive_whirlpool",
       "expected_family": "WHIRLPOOL_LEGACY",
@@ -104,6 +128,17 @@
     },
     {
       "txid": "779ac4a120049d10809a39d222f4d7381c3c0e94838c7cf6848d25fb36439ad6",
+      "category": "positive_whirlpool",
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "8adc6ae3258c018036cc447230cc549097313ea4c9a1ec0ff22b97f0bbfd0fe5",
       "category": "positive_whirlpool",
       "expected_family": "WHIRLPOOL_LEGACY",
       "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
@@ -205,21 +240,21 @@
       "txid": "66b21ea5d1d8a1f4ec026cd5e3d6efa6abf513560d3a5a6068a50c35d1a1c66f",
       "category": "positive_whirlpool",
       "expected_family": "WHIRLPOOL_LEGACY",
-      "expected_classification": "COINJOIN_LIKE",
-      "predicted_protocol": "UNKNOWN",
-      "predicted_classification": "COINJOIN_LIKE",
-      "confidence": 0.5,
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
       "correct": true,
-      "outcome": "FN"
+      "outcome": "TP"
     },
     {
       "txid": "dfe57d33a81720a059ceb5e84d546a05e55791b0eafca50574c9ed4c645ee575",
       "category": "ordinary_payment_negative",
       "expected_family": "UNKNOWN",
-      "expected_classification": "NOT_WHIRLPOOL",
+      "expected_classification": "NOT_COINJOIN",
       "predicted_protocol": "UNKNOWN",
-      "predicted_classification": "NOT_WHIRLPOOL",
-      "confidence": 0.0,
+      "predicted_classification": "NOT_COINJOIN",
+      "confidence": 0.3,
       "correct": true,
       "outcome": "TN"
     },
@@ -227,10 +262,10 @@
       "txid": "4e624682a5b69dbd1596628eec644c0f4782ba798f2794f7177715395bca7b91",
       "category": "batching_negative",
       "expected_family": "UNKNOWN",
-      "expected_classification": "NOT_WHIRLPOOL",
+      "expected_classification": "NOT_COINJOIN",
       "predicted_protocol": "UNKNOWN",
-      "predicted_classification": "NOT_WHIRLPOOL",
-      "confidence": 0.0,
+      "predicted_classification": "NOT_COINJOIN",
+      "confidence": 0.25,
       "correct": true,
       "outcome": "TN"
     },
@@ -238,30 +273,124 @@
       "txid": "2759143d93dc0bc29170eae07ad97a9c8931b60a7b673de04ac26d9764324a38",
       "category": "consolidation_negative",
       "expected_family": "UNKNOWN",
-      "expected_classification": "NOT_WHIRLPOOL",
+      "expected_classification": "NOT_COINJOIN",
       "predicted_protocol": "UNKNOWN",
-      "predicted_classification": "NOT_WHIRLPOOL",
-      "confidence": 0.0,
+      "predicted_classification": "NOT_COINJOIN",
+      "confidence": 0.3,
       "correct": true,
       "outcome": "TN"
-    }
-  ],
-  "errors": [
-    {
-      "txid": "da9dffbda2b3158565667bca071ab4f438be84e7f313ba71a426fe6de4281cc5",
-      "category": "positive_whirlpool",
-      "error_message": "Both block explorer APIs failed. Blockstream: Rate limited by the block explorer API \u2014 try again shortly. mempool.space: Could not reach block explorer API: timed out."
     },
     {
-      "txid": "240fbc0a1f225e4266b86d351a099ae4fd28bbb2d628960fae11e5481a9d43d0",
+      "txid": "567e9c3d9b45a5d3811afb7859bc9cebbc1354767fd0dd5fe91f7e2594ad7bc7",
       "category": "positive_whirlpool",
-      "error_message": "Both block explorer APIs failed. Blockstream: Rate limited by the block explorer API \u2014 try again shortly. mempool.space: Could not reach block explorer API: timed out."
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
     },
     {
-      "txid": "8adc6ae3258c018036cc447230cc549097313ea4c9a1ec0ff22b97f0bbfd0fe5",
+      "txid": "91ec98c83462518e66ca68ce3c1b6a51963d1aecfeda55eb886f1ff44f08be02",
       "category": "positive_whirlpool",
-      "error_message": "Both block explorer APIs failed. Blockstream: Rate limited by the block explorer API \u2014 try again shortly. mempool.space: Could not reach block explorer API: timed out."
+      "expected_family": "WHIRLPOOL_LEGACY",
+      "expected_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "predicted_protocol": "WHIRLPOOL_LEGACY",
+      "predicted_classification": "CONFIRMED_WHIRLPOOL_LEGACY_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "28a30c19a996c3493d267fdfe7bb7fd96a171a8a63a73e29db72af6e70561038",
+      "category": "positive_wabisabi",
+      "expected_family": "WABISABI_LIKE",
+      "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "predicted_protocol": "WABISABI_LIKE",
+      "predicted_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "c88725b7a5403f2ead7854507ebc0bb66ff5d817bf995490c6c5f7f072b7b483",
+      "category": "positive_wabisabi",
+      "expected_family": "WABISABI_LIKE",
+      "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "predicted_protocol": "WABISABI_LIKE",
+      "predicted_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "21621eddc897458183c266053e82503828787458bf30f3415b1ead2f152e5d74",
+      "category": "positive_wabisabi",
+      "expected_family": "WABISABI_LIKE",
+      "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "predicted_protocol": "WABISABI_LIKE",
+      "predicted_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "dfa8849a1b17a8182775f8f40f492490765894e2386eefda3e27f3d27cd21093",
+      "category": "positive_wabisabi",
+      "expected_family": "WABISABI_LIKE",
+      "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "predicted_protocol": "WABISABI_LIKE",
+      "predicted_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "b06740910bc3134bebb21521a277495a32d941b3603712421041009467444b93",
+      "category": "positive_wabisabi",
+      "expected_family": "WABISABI_LIKE",
+      "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "predicted_protocol": "WABISABI_LIKE",
+      "predicted_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "2a83a803d40c275d5a5472418eb91bd734b404cb85f3427840007c9d384c6105",
+      "category": "positive_wabisabi",
+      "expected_family": "WABISABI_LIKE",
+      "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "predicted_protocol": "WABISABI_LIKE",
+      "predicted_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "7a12a4f2db72c2c1a75ac507c67bec9f8d0c0155eaf65d07d6946056166ffb51",
+      "category": "positive_wabisabi",
+      "expected_family": "WABISABI_LIKE",
+      "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "predicted_protocol": "WABISABI_LIKE",
+      "predicted_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
+    },
+    {
+      "txid": "b02b3dbc07d1e8dd10421d94339f0d7b27fd65275e7a8dc1e01801fb5208306d",
+      "category": "positive_wabisabi",
+      "expected_family": "WABISABI_LIKE",
+      "expected_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "predicted_protocol": "WABISABI_LIKE",
+      "predicted_classification": "CONFIRMED_WABISABI_COINJOIN",
+      "confidence": 1.0,
+      "correct": true,
+      "outcome": "TP"
     }
   ],
+  "errors": [],
   "SMALL_SAMPLE_WARNING": false
 }

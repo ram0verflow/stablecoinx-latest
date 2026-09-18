@@ -14,6 +14,7 @@ import { ApprovalQueue } from './pages/ApprovalQueue';
 import { Policies } from './pages/Policies';
 import { Compliance } from './pages/Compliance';
 import { ObfuscationIntelligence } from './pages/ObfuscationIntelligence';
+import { MixerSignalExplorer } from './pages/MixerSignalExplorer';
 import { AuditReports } from './pages/AuditReports';
 import { Revalidation } from './pages/Revalidation';
 import { Integrations } from './pages/Integrations';
@@ -68,6 +69,7 @@ export const App: React.FC = () => {
               <Route path="policies" element={<Policies />} />
               <Route path="compliance" element={<Compliance />} />
               <Route path="obfuscation-intelligence" element={<ObfuscationIntelligence />} />
+              <Route path="mixer-signals" element={<MixerSignalExplorer />} />
               <Route
                 path="audit-reports"
                 element={

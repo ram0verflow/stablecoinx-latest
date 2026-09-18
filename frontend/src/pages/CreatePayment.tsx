@@ -9,7 +9,11 @@ import { IcSelectChevron } from '../components/scx/icons';
 import type { Country, Chain, Token, Purpose, Urgency } from '../types';
 
 const COUNTRIES: Country[] = ['Singapore', 'USA', 'UK', 'UAE', 'India', 'Germany', 'Japan', 'Switzerland', 'Canada', 'Australia', 'Hong Kong', 'Egypt', 'South Korea', 'Russia', 'Iran', 'North Korea'];
-const CHAINS: Chain[] = ['Base Sepolia', 'Polygon Amoy', 'Ethereum Mainnet', 'Arbitrum', 'Optimism'];
+const CHAINS: Chain[] = ['Base Sepolia', 'Polygon Amoy', 'Ethereum Mainnet', 'Arbitrum', 'Optimism', 'Tron'];
+const EVM_WALLET_RE = /^0x[a-fA-F0-9]{40}$/;
+const TRON_WALLET_RE = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+const isTronChain = (chain: string) => chain.trim().toLowerCase() === 'tron';
+const walletPatternFor = (chain: string) => (isTronChain(chain) ? TRON_WALLET_RE : EVM_WALLET_RE);
 const TOKENS: Token[] = ['USDC', 'USDT', 'DAI', 'BUSD', 'TUSD'];
 const PURPOSES: Purpose[] = ['Payroll', 'Supplier Payment', 'Treasury Transfer', 'Cross-border Settlement', 'Invoice Payment', 'Refund', 'Dividend Payment'];
 const URGENCIES: Urgency[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -46,9 +50,11 @@ export const CreatePayment: React.FC = () => {
 
   useEffect(() => {
     const wallet = form.senderWallet.trim();
-    if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) { setWalletBalance(null); return; }
+    // Balance lookup is an EVM RPC call — skip it for Tron wallets rather
+    // than pretend an ETH balance means anything there.
+    if (isTronChain(form.sourceChain) || !EVM_WALLET_RE.test(wallet)) { setWalletBalance(null); return; }
     walletApi.balance(wallet).then(({ data }) => setWalletBalance(data.balance as any)).catch(() => setWalletBalance(null));
-  }, [form.senderWallet]);
+  }, [form.senderWallet, form.sourceChain]);
 
   useEffect(() => {
     policyApi.rules().then(({ data }) => setRules(Array.isArray(data) ? data : [])).catch(() => setRules([]));
@@ -65,8 +71,8 @@ export const CreatePayment: React.FC = () => {
 
   const amountNum = parseFloat(form.amount) || 0;
   const aboveThreshold = preflight.state === 'allowed' && preflight.threshold > 0 && amountNum > preflight.threshold;
-  const senderWalletValid = /^0x[a-fA-F0-9]{40}$/.test(form.senderWallet.trim());
-  const receiverWalletValid = /^0x[a-fA-F0-9]{40}$/.test(form.receiverWallet.trim());
+  const senderWalletValid = walletPatternFor(form.sourceChain).test(form.senderWallet.trim());
+  const receiverWalletValid = walletPatternFor(form.destinationChain).test(form.receiverWallet.trim());
   const canSubmit = !!form.senderCompany && !!form.receiverCompany && senderWalletValid && receiverWalletValid && amountNum > 0 && !loading;
 
   const handleSubmit = async () => {
@@ -112,13 +118,13 @@ export const CreatePayment: React.FC = () => {
                   <div className="subhead">Sender</div>
                   <div className="field"><label>Entity</label><input className="finput" value={form.senderCompany} onChange={(e) => set('senderCompany', e.target.value)} placeholder="Acme Global Inc" /></div>
                   <div className="field"><label>Country</label><Select field="sourceCountry" options={COUNTRIES} /></div>
-                  <div className="field"><label>Wallet</label><input className="finput wal" value={form.senderWallet} onChange={(e) => set('senderWallet', e.target.value)} placeholder="0x…" /></div>
+                  <div className="field"><label>Wallet</label><input className="finput wal" value={form.senderWallet} onChange={(e) => set('senderWallet', e.target.value)} placeholder={isTronChain(form.sourceChain) ? 'T…' : '0x…'} /></div>
                 </div>
                 <div>
                   <div className="subhead">Recipient</div>
                   <div className="field"><label>Entity</label><input className="finput" value={form.receiverCompany} onChange={(e) => set('receiverCompany', e.target.value)} placeholder="Zenith Trading" /></div>
                   <div className="field"><label>Country</label><Select field="destinationCountry" options={COUNTRIES} /></div>
-                  <div className="field"><label>Wallet</label><input className="finput wal" value={form.receiverWallet} onChange={(e) => set('receiverWallet', e.target.value)} placeholder="0x…" /></div>
+                  <div className="field"><label>Wallet</label><input className="finput wal" value={form.receiverWallet} onChange={(e) => set('receiverWallet', e.target.value)} placeholder={isTronChain(form.destinationChain) ? 'T…' : '0x…'} /></div>
                 </div>
               </div>
             </div>
@@ -196,7 +202,7 @@ export const CreatePayment: React.FC = () => {
                     <div className={`t ${form.senderWallet && form.receiverWallet ? (senderWalletValid && receiverWalletValid ? 'ok-tag' : 'bad-tag') : 'warn-tag'}`}>
                       {form.senderWallet && form.receiverWallet ? (senderWalletValid && receiverWalletValid ? 'Valid' : 'Invalid address') : 'Not entered'}
                     </div>
-                    <div className="s">0x + 40 hex characters</div>
+                    <div className="s">{isTronChain(form.sourceChain) || isTronChain(form.destinationChain) ? 'Tron: T + 33 base58 · EVM: 0x + 40 hex' : '0x + 40 hex characters'}</div>
                   </div>
                 </div>
                 <div className="pf-row">

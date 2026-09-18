@@ -257,12 +257,31 @@ def seed_db():
             ("UK Supplier Hub", "UAE Industrial Buyer", "UK", "UAE", Decimal("12000"), "USDT", "Supplier Payment", PaymentStatus.approved, "Base Sepolia", "Polygon Amoy", "alternate_chain", FinalDecision.approved),
             ("USA Export Co", "Russia Components LLC", "USA", "Russia", Decimal("8000"), "USDC", "Supplier Payment", PaymentStatus.blocked, "Base Sepolia", "Base Sepolia", "block", FinalDecision.blocked),
             ("SG Payroll Services", "India Talent Pvt", "SG", "India", Decimal("9500"), "USDC", "Payroll", PaymentStatus.executed, "Base Sepolia", "Base Sepolia", "direct_transfer", FinalDecision.approved),
-            ("UAE Procurement Co", "India Supplier Park", "UAE", "India", Decimal("75000"), "USDC", "Supplier Payment", PaymentStatus.under_review, "Base Sepolia", "Base Sepolia", "manual_review", FinalDecision.pending_review),
+            ("UAE Procurement Co", "India Supplier Park", "UAE", "India", Decimal("75000"), "USDC", "Supplier Payment", PaymentStatus.under_review, "Base Sepolia", "Tron", "manual_review", FinalDecision.pending_review),
             ("Germany Treasury GmbH", "UAE Capital Desk", "Germany", "UAE", Decimal("180000"), "USDC", "Treasury Transfer", PaymentStatus.executed, "Base Sepolia", "Base Sepolia", "direct_transfer", FinalDecision.approved),
             ("USA Risk Sender", "Iran Counterparty", "USA", "Iran", Decimal("4000"), "USDC", "Supplier Payment", PaymentStatus.blocked, "Base Sepolia", "Base Sepolia", "block", FinalDecision.blocked),
             ("SG FastPay", "UAE Merchant", "SG", "UAE", Decimal("500"), "USDC", "Supplier Payment", PaymentStatus.approved, "Base Sepolia", "Base Sepolia", "direct_transfer", FinalDecision.approved),
-            ("SG Mega Treasury", "USA Prime Capital", "SG", "USA", Decimal("1000000"), "USDC", "Treasury Transfer", PaymentStatus.under_review, "Base Sepolia", "Polygon Amoy", "split_payment", FinalDecision.pending_review),
+            ("SG Mega Treasury", "USA Prime Capital", "SG", "USA", Decimal("1000000"), "USDC", "Treasury Transfer", PaymentStatus.under_review, "Tron", "Polygon Amoy", "split_payment", FinalDecision.pending_review),
         ]
+
+        # Two demo payments settle on Tron and carry REAL, live Tron mainnet
+        # wallet addresses (verified against apilist.tronscanapi.com, not
+        # fabricated) so their Mixer Signal panel reflects genuine on-chain
+        # activity for that exact wallet, not an unrelated hashed-in example.
+        #   i=6  (UAE Procurement Co -> India Supplier Park): receiver settles
+        #        on Tron via a real high fan-in "collector" address.
+        #   i=10 (SG Mega Treasury -> USA Prime Capital): sender settles on
+        #        Tron via a real high fan-out "disperser" address — pairs
+        #        naturally with the existing split_payment policy narrative.
+        REAL_TRON_WALLET_OVERRIDES = {
+            6: {"receiver_wallet": "TRpXQyT3RLWKmxAGNU1bHGuzxB56Dr86Pu"},
+            10: {"sender_wallet": "TVt7oQuLnHZz252eaDFLbh66zHDGgksoSY"},
+            # i=8 (USA Risk Sender -> Iran Counterparty, already blocked on
+            # sanctions): sender wallet is a real Base Sepolia address with
+            # genuine 10-distinct-counterparty fan-out (verified live via
+            # Etherscan API V2, chainid=84532), once an API key was provided.
+            8: {"sender_wallet": "0xa6b711d174d92bc75b1619e978b2c24fccec08f4"},
+        }
 
         seeded_payments: list[PaymentIntent] = []
         for i, (sender, receiver, src, dst, amount, token, purpose, status, src_chain, dst_chain, ai_decision, final_decision) in enumerate(payments_data, start=1):
@@ -273,6 +292,9 @@ def seed_db():
                 PaymentIntent.token == token,
                 PaymentIntent.purpose == purpose,
             ).first()
+            wallet_override = REAL_TRON_WALLET_OVERRIDES.get(i, {})
+            sender_wallet = wallet_override.get("sender_wallet", f"0x{i:040x}")
+            receiver_wallet = wallet_override.get("receiver_wallet", f"0x{i+100:040x}")
             if not existing:
                 existing = PaymentIntent(
                     id=uuid.uuid4(),
@@ -287,13 +309,27 @@ def seed_db():
                     purpose=purpose,
                     status=status,
                     created_by=users["admin"].id,
-                    sender_wallet=f"0x{i:040x}",
-                    receiver_wallet=f"0x{i+100:040x}",
+                    sender_wallet=sender_wallet,
+                    receiver_wallet=receiver_wallet,
                     created_at=now - timedelta(days=max(0, 10 - i)),
                     updated_at=now - timedelta(hours=max(1, i)),
                     executed_at=(now - timedelta(hours=i)) if status == PaymentStatus.executed else None,
                 )
                 db.add(existing)
+                db.commit()
+                db.refresh(existing)
+            elif (
+                existing.source_chain != src_chain
+                or existing.destination_chain != dst_chain
+                or existing.sender_wallet != sender_wallet
+                or existing.receiver_wallet != receiver_wallet
+            ):
+                # Backfill chain/wallet corrections onto an already-seeded row
+                # (e.g. the Tron pivot) without touching its id or history.
+                existing.source_chain = src_chain
+                existing.destination_chain = dst_chain
+                existing.sender_wallet = sender_wallet
+                existing.receiver_wallet = receiver_wallet
                 db.commit()
                 db.refresh(existing)
             seeded_payments.append(existing)

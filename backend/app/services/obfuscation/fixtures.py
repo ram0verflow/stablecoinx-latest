@@ -30,3 +30,8 @@ def get_fixture(txid: str) -> Optional[Dict[str, Any]]:
 
 def list_fixture_txids() -> list:
     return [k for k in _load().keys() if k != "_meta"]
+
+
+def list_all_fixtures() -> Dict[str, Dict[str, Any]]:
+    """Returns {txid: precomputed_result} for every fixture (excludes _meta)."""
+    return {k: v for k, v in _load().items() if k != "_meta"}

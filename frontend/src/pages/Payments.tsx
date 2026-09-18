@@ -1,25 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { paymentApi, obfuscationApi } from '../lib/api';
+import { paymentApi } from '../lib/api';
 import { useAuthStore } from '../store/authStore';
 import { IcSearch, IcArrowRight } from '../components/scx/icons';
-import { getObfuscationDemoForPayment } from '../lib/obfuscationDemoPayments';
-import type { ObfuscationAnalyzeResult } from '../types';
-
-const OBF_POLICY_TONE: Record<string, string> = {
-  ENHANCED_REVIEW: 'st-amber',
-  NO_OBFUSCATION_ACTION: 'st-green',
-  INFORMATIONAL_ONLY: 'st-gray',
-  BLOCKED_BY_EXTERNAL_ATTRIBUTION: 'st-red',
-  MANUAL_REVIEW_PROVIDER_UNAVAILABLE: 'st-amber',
-};
-const OBF_POLICY_LABEL: Record<string, string> = {
-  ENHANCED_REVIEW: 'Enhanced Review',
-  NO_OBFUSCATION_ACTION: 'No Action',
-  INFORMATIONAL_ONLY: 'Informational',
-  BLOCKED_BY_EXTERNAL_ATTRIBUTION: 'Blocked — Attribution',
-  MANUAL_REVIEW_PROVIDER_UNAVAILABLE: 'Provider Unavailable',
-};
+const TRON_CHAIN_NAMES = new Set(['tron', 'trx']);
+const isTronChain = (chain?: string) => TRON_CHAIN_NAMES.has((chain ?? '').trim().toLowerCase());
 
 function mapPayment(p: any) {
   return {
@@ -29,6 +14,8 @@ function mapPayment(p: any) {
     sourceCountry: p.source_country ?? '',
     destinationCountry: p.destination_country ?? '',
     corridor: `${p.source_country ?? ''} → ${p.destination_country ?? ''}`,
+    sourceChain: p.source_chain ?? '',
+    destinationChain: p.destination_chain ?? '',
     amount: Number(p.amount ?? 0),
     token: p.token ?? 'USDC',
     status: String(p.status ?? 'pending'),
@@ -71,7 +58,6 @@ export const Payments: React.FC = () => {
   const [payments, setPayments] = useState<ReturnType<typeof mapPayment>[]>([]);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [obfResults, setObfResults] = useState<Record<string, ObfuscationAnalyzeResult>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -86,18 +72,6 @@ export const Payments: React.FC = () => {
     const timer = setInterval(load, 20_000);
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    payments.forEach((p) => {
-      const demo = getObfuscationDemoForPayment(p.id);
-      if (demo && !obfResults[p.id]) {
-        obfuscationApi.analyze(demo.txid, 'bitcoin')
-          .then(({ data }) => setObfResults((prev) => ({ ...prev, [p.id]: data })))
-          .catch(() => {});
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payments]);
 
   const counts = useMemo(() => ({
     all: payments.length,
@@ -167,13 +141,12 @@ export const Payments: React.FC = () => {
             <thead>
               <tr>
                 <th>Payment</th><th>Counterparty</th><th>Corridor</th><th style={{ textAlign: 'right' }}>Amount</th>
-                <th>Decision</th><th>Settlement</th><th>Obfuscation</th><th>Age</th>
+                <th>Decision</th><th>Settlement</th><th>Mixer Signal</th><th>Age</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((p) => {
-                const demo = getObfuscationDemoForPayment(p.id);
-                const obf = demo ? obfResults[p.id] : undefined;
+                const tronLeg = isTronChain(p.sourceChain) || isTronChain(p.destinationChain);
                 return (
                   <tr key={p.id} onClick={() => navigate(`/route-analysis/${p.id}`)}>
                     <td><div className="pay-id mono">#{p.id.slice(0, 8)}</div></td>
@@ -183,18 +156,10 @@ export const Payments: React.FC = () => {
                     <td><span className={`status ${decisionTone[p.status] || 'st-gray'}`}><span className="d" style={{ background: 'currentColor' }} />{decisionLabel[p.status] || p.status}</span></td>
                     <td><span className={`status ${settlementTone[p.status] || 'st-gray'}`}><span className="d" style={{ background: 'currentColor' }} />{settlementLabel[p.status] || '—'}</span></td>
                     <td>
-                      {demo ? (
-                        <span
-                          className={`status ${obf ? OBF_POLICY_TONE[obf.policy_recommendation] || 'st-gray' : 'st-gray'}`}
-                          onClick={(e) => { e.stopPropagation(); navigate(`/obfuscation-intelligence?txid=${demo.txid}`); }}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <span className="d" style={{ background: 'currentColor' }} />
-                          {obf ? (OBF_POLICY_LABEL[obf.policy_recommendation] || obf.policy_recommendation) : 'Analyzing…'}
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--ink-faint)' }}>—</span>
-                      )}
+                      <span className="status st-blue">
+                        <span className="d" style={{ background: 'currentColor' }} />
+                        {tronLeg ? 'Tron — Live Signal' : `${p.destinationChain || 'EVM'} — Live Signal`}
+                      </span>
                     </td>
                     <td className="age">{timeSince(p.createdAt)}</td>
                   </tr>

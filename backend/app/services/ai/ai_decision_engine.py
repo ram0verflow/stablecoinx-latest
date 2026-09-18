@@ -50,6 +50,7 @@ def redact_pii(text: str) -> str:
         return f"WALLET_{addr[:6]}...REDACTED"
     
     redacted_text = re.sub(r'0x[a-fA-F0-9]{40}', replacer, text)
+    redacted_text = re.sub(r'T[1-9A-HJ-NP-Za-km-z]{33}', replacer, redacted_text)
     return redacted_text
 
 def build_prompt(payment: PaymentIntent, results: Dict[str, Any], simplified: bool = False) -> str:

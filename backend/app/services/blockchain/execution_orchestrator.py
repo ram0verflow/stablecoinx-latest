@@ -500,6 +500,21 @@ class ExecutionOrchestrator:
         if not payment:
             raise ExecutionError("Payment not found")
 
+        # This orchestrator only ever signs and broadcasts real EVM
+        # transactions (Base Sepolia / Polygon Amoy, via the backend's
+        # funded EVM wallet). A Tron-settling payment has no funded Tron
+        # wallet or TVM contract deployment behind it — executing it here
+        # would silently settle on the wrong chain under the Tron label.
+        # Fail honestly instead of faking a Tron settlement.
+        non_evm_chains = {"tron", "trx"}
+        if (payment.source_chain or "").strip().lower() in non_evm_chains or (payment.destination_chain or "").strip().lower() in non_evm_chains:
+            raise ExecutionError(
+                "On-chain execution is not yet implemented for Tron — this backend only "
+                "signs real transactions on the EVM testnets (Base Sepolia / Polygon Amoy). "
+                "This payment can be approved and tracked through compliance, but settlement "
+                "requires manual execution on Tron until a funded Tron wallet is configured."
+            )
+
         approvals_ok, reason = self.verify_approvals(self.db, payment_id)
         if not approvals_ok:
             raise ExecutionError(reason)

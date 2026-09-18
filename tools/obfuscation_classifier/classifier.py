@@ -9,7 +9,7 @@ from typing import Any, Dict, Union
 
 from fetchers import FetcherError, fetch_transaction
 from features import extract_features
-from rules import classify_whirlpool_legacy
+from rules import classify_transaction
 from schemas import ClassificationResult, normalize_transaction
 
 
@@ -29,7 +29,21 @@ def analyze_txid(txid: str) -> Union[ClassificationResult, Dict[str, Any]]:
         raw = fetch_transaction(txid)
         tx = normalize_transaction(raw)
         features = extract_features(tx)
-        rule_result = classify_whirlpool_legacy(features)
+        rule_result = classify_transaction(features)
+
+        chart_data = {
+            "input_count": features["input_count"],
+            "output_count": features["output_count"],
+            "output_values_sats": features["output_values_sats"],
+            "unique_output_values": features["unique_output_values"],
+            "largest_equal_output_group_size": features["largest_equal_output_group_size"],
+            "equal_output_group_count": features["equal_output_group_count"],
+            "total_output_sats": features["total_output_sats"],
+            "total_input_sats": features["total_input_sats"],
+            "fee_sats": features["fee_sats"],
+            "block_height": tx.block_height,
+            "block_time": tx.block_time,
+        }
 
         return ClassificationResult(
             txid=tx.txid or txid,
@@ -40,6 +54,8 @@ def analyze_txid(txid: str) -> Union[ClassificationResult, Dict[str, Any]]:
             evidence=rule_result["evidence"],
             evidence_against=rule_result["evidence_against"],
             classification_hint=rule_result.get("classification_hint"),
+            checked_protocols=rule_result.get("checked_protocols", []),
+            chart_data=chart_data,
         )
     except FetcherError as e:
         return {"error": True, "message": str(e), "txid": txid}
