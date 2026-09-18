@@ -22,6 +22,9 @@ __pycache__/
 out/
 cache/
 
+# Contract dependencies (use forge install to restore)
+contracts/lib/
+
 # Build output
 dist/
 build/
