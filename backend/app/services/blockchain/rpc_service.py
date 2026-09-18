@@ -22,21 +22,27 @@ class RPCService:
 
     def check_rpc_health(self, chain: str = "base_sepolia") -> bool:
         """Returns True/False based on RPC connection health"""
-        web3 = self.get_web3_by_chain(chain)
         try:
-            return web3.is_connected()
+            web3 = self.get_web3_by_chain(chain)
+            return bool(web3.is_connected())
         except Exception:
             return False
 
-    def get_gas_price(self, chain: str = "base_sepolia") -> float:
-        """Returns current gas price in gwei"""
-        web3 = self.get_web3_by_chain(chain)
-        gas_price_wei = web3.eth.gas_price
-        return float(web3.from_wei(gas_price_wei, "gwei"))
+    def get_gas_price(self, chain: str = "base_sepolia") -> int:
+        """Returns current gas price in wei. Returns 0 on failure."""
+        try:
+            web3 = self.get_web3_by_chain(chain)
+            gas_price_wei = web3.eth.gas_price
+            return int(gas_price_wei or 0)
+        except Exception:
+            return 0
 
     def estimate_gas(self, chain: str, tx: dict) -> int:
         """Returns gas estimate for a transaction"""
-        web3 = self.get_web3_by_chain(chain)
-        return web3.eth.estimate_gas(tx)
+        try:
+            web3 = self.get_web3_by_chain(chain)
+            return int(web3.eth.estimate_gas(tx))
+        except Exception:
+            return 0
 
 rpc_service = RPCService()

@@ -14,6 +14,7 @@ from uuid import UUID
 from app.models.payment_intents import PaymentIntent, PaymentStatus
 from app.models.compliance_decisions import ComplianceDecision, AIDecisionType, FinalDecision
 
+from app.core.config import settings  # FIXED: PHASE7
 from app.services.governance.country_policy_service import check_corridor
 from app.services.governance.treasury_controls_service import check_treasury_controls
 from app.services.compliance.compliance_engine import run_compliance_checks
@@ -59,11 +60,22 @@ def run_payment_pipeline(db: Session, payment_id: UUID) -> dict | None:
     pipeline_results["compliance"] = compliance
 
     # Step 5: Wallet Graph Intelligence
-    wallet_graph = analyze_wallet(payment.sender_company)
+    sender_user = db.query(User).filter(User.id == payment.created_by).first()
+    wallet_address = None
+    if sender_user and sender_user.wallet_address:
+        wallet_address = sender_user.wallet_address
+    if hasattr(payment, "sender_wallet") and payment.sender_wallet:
+        wallet_address = payment.sender_wallet
+    wallet_graph = analyze_wallet(wallet_address or payment.sender_company)
+    receiver_wallet_result = analyze_wallet(
+        payment.receiver_wallet or payment.receiver_company
+    )
+    if receiver_wallet_result.get("risk_score", 0) > wallet_graph.get("risk_score", 0):
+        wallet_graph = receiver_wallet_result
     pipeline_results["wallet_graph"] = wallet_graph
 
     # Step 6: Stablecoin Issuer Risk
-    issuer_risk = get_issuer_risk(payment.token)
+    issuer_risk = get_issuer_risk(db, payment.token)  # FIXED: M5
     pipeline_results["issuer_risk"] = issuer_risk
 
     # Step 7: Cross-Chain Governance
@@ -90,6 +102,8 @@ def run_payment_pipeline(db: Session, payment_id: UUID) -> dict | None:
     decision_record = ComplianceDecision(
         payment_id=payment.id,
         country_policy_result=country_policy,
+        treasury_controls_result=treasury_controls,  # FIXED: M1
+        compliance_result=compliance,  # FIXED: M1
         wallet_risk_result=wallet_graph,
         issuer_risk_result=issuer_risk,
         chain_governance_result=chain_governance,
@@ -142,7 +156,7 @@ def run_payment_pipeline(db: Session, payment_id: UUID) -> dict | None:
                 "company_name": payment.sender_company,
             },
             amount=amount,
-            policy_range=(0.0, 500_000.0),
+            policy_range=(0.0, float(settings.TREASURY_DAILY_LIMIT)),  # FIXED: PHASE7
             approval_id=None,
         )
 
@@ -151,14 +165,15 @@ def run_payment_pipeline(db: Session, payment_id: UUID) -> dict | None:
             from app.services.blockchain.contract_service import contract_service
             proof_hash = zk_bundle["combined_proof_hash"]
             dummy_tx = "0x" + "0" * 64
+            token_address = settings.MOCK_USDC_ADDRESS if payment.token == "USDC" else settings.MOCK_USDT_ADDRESS
             on_chain_tx = contract_service.register_proof_on_chain(
-                payment_id=str(payment.id).replace("-", "")[:64].ljust(64, "0"),
+                payment_id=("0x" + str(payment.id).replace("-", "")[:64].ljust(64, "0")),
                 tx_hash=dummy_tx,
                 zk_proof_hash=("0x" + proof_hash)[:66].ljust(66, "0"),
                 ai_decision=ai_decision,
                 policy_version=country_policy.get("policy_version", "v1.0"),
                 amount=int(amount),
-                token=payment.token,
+                token=token_address,
             )
             zk_bundle["on_chain_tx"] = on_chain_tx
             zk_bundle["basescan_url"] = f"https://sepolia.basescan.org/tx/{on_chain_tx}"
@@ -259,12 +274,12 @@ def _send_notifications_sync(db, payment, pipeline_results, wallet_graph, ai_res
         else:
             return
 
-        # Run the async coroutine in a fresh event loop (we're in a thread)
-        loop = asyncio.new_event_loop()
         try:
-            loop.run_until_complete(coro)
-        finally:
-            loop.close()
+            asyncio.run(coro)
+        except RuntimeError:
+            import nest_asyncio
+            nest_asyncio.apply()
+            asyncio.run(coro)
 
     except Exception as exc:
         logger.error(f"Notification error for {payment.id}: {exc}")

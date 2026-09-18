@@ -17,6 +17,15 @@ from app.services.notifications.telegram_service import get_telegram_service
 
 logger = logging.getLogger(__name__)
 
+ALERT_TYPE_MAP = {
+    "payment_approved": AlertType.approved,
+    "payment_blocked": AlertType.blocked,
+    "review_needed": AlertType.review_needed,
+    "revalidation_triggered": AlertType.revalidation_triggered,
+    "settlement_executed": AlertType.settlement_executed,
+    "settlement_failed": AlertType.settlement_failed,
+}
+
 
 class AlertService:
     """Service for managing system alerts."""
@@ -41,17 +50,15 @@ class AlertService:
             Created alert or None
         """
         try:
-            # Map alert type string to enum
-            normalized_alert_type = {
-                "payment_approved": "approved",
-                "payment_blocked": "blocked",
-            }.get(alert_type, alert_type)
-            alert_type_enum = AlertType(normalized_alert_type)
+            mapped_type = ALERT_TYPE_MAP.get(
+                alert_type,
+                AlertType[alert_type] if alert_type in AlertType.__members__ else AlertType.review_needed
+            )
             
             # Create alert record
             alert = Alert(
                 payment_id=payment_id,
-                alert_type=alert_type_enum,
+                alert_type=mapped_type,
                 message=message,
                 is_read=False,
             )

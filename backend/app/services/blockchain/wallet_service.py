@@ -54,4 +54,40 @@ class WalletService:
         """Returns receipt"""
         return self.web3.eth.wait_for_transaction_receipt(tx_hash)
 
+    def mint_tokens(self, to_address: str, amount: float, token_type: str = "USDC") -> str:
+        """
+        Mint mock tokens (USDC/USDT) to a specific address.
+        """
+        from app.services.blockchain.abi_loader import load_contract_abi
+        
+        token_address = (
+            settings.MOCK_USDC_ADDRESS if token_type.upper() == "USDC" else settings.MOCK_USDT_ADDRESS
+        )
+        
+        if not token_address:
+            raise Exception(f"Contract address for {token_type} not configured")
+            
+        # Ensure we are on the correct network if needed
+        # (For now we assume the current web3 instance is correct)
+        
+        abi = load_contract_abi("MockStablecoinERC20")
+        contract = self.web3.eth.contract(address=self.web3.to_checksum_address(token_address), abi=abi)
+        
+        to_checksum = self.web3.to_checksum_address(to_address)
+        amount_units = int(amount * (10**6)) # Assuming 6 decimals for mock stablecoins
+        
+        nonce = self.web3.eth.get_transaction_count(self.address)
+        
+        tx = contract.functions.mint(to_checksum, amount_units).build_transaction({
+            'from': self.address,
+            'nonce': nonce,
+            'gas': 200000,
+            'gasPrice': self.web3.eth.gas_price,
+            'chainId': self.chain_id
+        })
+        
+        signed_tx = self.web3.eth.account.sign_transaction(tx, self.private_key)
+        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        return self.web3.to_hex(tx_hash)
+
 wallet_service = WalletService()

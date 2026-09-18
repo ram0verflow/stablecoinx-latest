@@ -17,9 +17,29 @@ class AITimeoutError(Exception):
     pass
 
 VALID_DECISIONS = [
-    "direct_transfer", "alternate_chain", "alternate_token", 
+    "direct_transfer", "alternate_chain", "alternate_token",
     "delay_transfer", "split_payment", "manual_review", "block"
 ]
+EXTERNAL_DECISION_ALIASES = {
+    "approve": "direct_transfer",
+    "approve_with_conditions": "manual_review",
+    "escalate": "manual_review",
+    "monitor": "manual_review",
+    "reject": "block",
+}
+
+def get_safe_default(reason: str, payment: PaymentIntent = None) -> dict:
+    return {
+        "decision": "manual_review",
+        "confidence": 0.0,
+        "recommended_chain": payment.source_chain if payment else "base_sepolia",
+        "recommended_token": payment.token if payment else "USDC",
+        "reasoning": f"AI engine returned invalid response. Defaulting to manual review. Reason: {reason}",
+        "risk_summary": "Unable to compute — manual review required",
+        "flags": ["ai_parse_failure"],
+        "alternative_options": [],
+        "meta": {"engine": "fallback", "latency_ms": 0, "tokens": 0}
+    }
 
 def redact_pii(text: str) -> str:
     # A simple regex or replace approach to redact 0x... addresses
@@ -138,30 +158,56 @@ def call_groq(prompt: str) -> Tuple[str, Dict[str, Any]]:
     
     return content, {"engine": "groq", "latency_ms": latency, "tokens": tokens}
 
-def extract_json(text: str) -> dict:
+def parse_ai_response(raw: str) -> dict:
+    # Strip markdown fences if present
+    clean = raw.strip()
+    if clean.startswith("```"):
+        try:
+            clean = clean.split("```")[1]
+            if clean.startswith("json"):
+                clean = clean[4:]
+        except IndexError:
+            pass
+    clean = clean.strip()
+    
     try:
-        # Check if wrapped in markdown code blocks
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0]
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0]
-        return json.loads(text.strip())
-    except Exception as e:
-        logger.error(f"Failed to parse JSON: {e}")
-        raise ValueError("Invalid JSON")
+        parsed = json.loads(clean)
+    except json.JSONDecodeError:
+        # Try to extract JSON from mixed text
+        import re
+        match = re.search(r'\{.*\}', clean, re.DOTALL)
+        if match:
+            try:
+                parsed = json.loads(match.group())
+            except Exception as e:
+                logger.error(f"AI parse error: {e}")
+                raise ValueError("JSON parse failed after retry")
+        else:
+            raise ValueError("No JSON found in response")
+    
+    decision = str(parsed.get("decision", "")).strip().lower()
+    if decision in EXTERNAL_DECISION_ALIASES:
+        logger.warning(f"AI returned external decision '{decision}', mapping safely")
+        decision = EXTERNAL_DECISION_ALIASES[decision]
+    if decision not in VALID_DECISIONS:
+        logger.warning(
+            f"Unexpected AI decision '{parsed.get('decision')}', defaulting to manual_review"
+        )
+        decision = "manual_review"
+    parsed["decision"] = decision
+    
+    confidence = parsed.get("confidence", 0.5)
+    if not isinstance(confidence, (int, float)) or not 0 <= confidence <= 1:
+        parsed["confidence"] = 0.5
+    
+    if not parsed.get("reasoning"):
+        parsed["reasoning"] = "No reasoning provided by AI engine"
+    
+    return parsed
 
 def validate_decision(data: dict) -> bool:
-    if data.get("decision") not in VALID_DECISIONS:
-        return False
-    try:
-        conf = float(data.get("confidence", 0.0))
-        if not (0.0 <= conf <= 1.0):
-            return False
-    except (ValueError, TypeError):
-        return False
-    if not data.get("reasoning"):
-        return False
-    return True
+    # Legacy, replaced by parse_ai_response exceptions
+    return data.get("decision") in VALID_DECISIONS
 
 def get_ai_decision(payment: PaymentIntent, results: Dict[str, Any], preferred_engine: str = "ollama") -> Dict[str, Any]:
     raw_prompt = build_prompt(payment, results)
@@ -179,30 +225,15 @@ def get_ai_decision(payment: PaymentIntent, results: Dict[str, Any], preferred_e
                 else:
                     response_text, meta = call_groq(redacted_prompt if attempt == 0 else redact_pii(build_prompt(payment, results, simplified=True)))
                 
-                parsed = extract_json(response_text)
-                
-                if validate_decision(parsed):
-                    parsed["meta"] = meta
-                    return parsed
-                else:
-                    logger.warning(f"Validation failed for {engine} attempt {attempt+1}")
+                parsed = parse_ai_response(response_text)
+                parsed["meta"] = meta
+                return parsed
+
             except (AITimeoutError, OllamaModelNotLoadedError) as e:
                 logger.warning(str(e))
                 if engine == "ollama":
-                    # Immediate fallback to Groq for timeout/model-unavailable conditions.
                     break
             except Exception as e:
                 logger.error(f"{engine} call failed on attempt {attempt+1}: {e}")
                 
-    # If all engines/attempts fail
-    return {
-        "decision": "manual_review",
-        "confidence": 0.0,
-        "recommended_chain": payment.source_chain,
-        "recommended_token": payment.token,
-        "reasoning": "AI parsing or execution failed, defaulting to manual review",
-        "risk_summary": "System error prevented AI analysis.",
-        "flags": ["AI_FAILURE"],
-        "alternative_options": [],
-        "meta": {"engine": "fallback", "latency_ms": 0, "tokens": 0}
-    }
+    return get_safe_default("All engines failed", payment)

@@ -1,14 +1,30 @@
 import { create } from 'zustand';
 import type { Payment } from '../types';
+import { paymentApi } from '../lib/api';
 
-const MOCK_PAYMENTS: Payment[] = [
-  { id: 'PAY-001', senderCompany: 'TechCorp SG', receiverCompany: 'FinServ UK', sourceCountry: 'Singapore', destinationCountry: 'UK', sourceChain: 'Base Sepolia', destinationChain: 'Polygon Amoy', amount: 250000, token: 'USDC', purpose: 'Treasury Transfer', urgency: 'High', status: 'executed', corridor: 'SG → UK', riskScore: 12, aiDecision: 'APPROVE', createdAt: '2025-04-27T09:00:00Z', updatedAt: '2025-04-27T09:05:00Z' },
-  { id: 'PAY-002', senderCompany: 'GlobalPay Inc', receiverCompany: 'MerchantHub DE', sourceCountry: 'USA', destinationCountry: 'Germany', sourceChain: 'Polygon Amoy', destinationChain: 'Base Sepolia', amount: 180000, token: 'USDT', purpose: 'Supplier Payment', urgency: 'Medium', status: 'pending', corridor: 'US → DE', riskScore: 45, aiDecision: 'ESCALATE', createdAt: '2025-04-27T10:30:00Z', updatedAt: '2025-04-27T10:30:00Z' },
-  { id: 'PAY-003', senderCompany: 'OilTrade UAE', receiverCompany: 'RefineryCo IN', sourceCountry: 'UAE', destinationCountry: 'India', sourceChain: 'Base Sepolia', destinationChain: 'Polygon Amoy', amount: 500000, token: 'USDC', purpose: 'Cross-border Settlement', urgency: 'Critical', status: 'under_review', corridor: 'AE → IN', riskScore: 72, aiDecision: 'ESCALATE', createdAt: '2025-04-27T11:15:00Z', updatedAt: '2025-04-27T11:20:00Z' },
-  { id: 'PAY-004', senderCompany: 'NexaPay SG', receiverCompany: 'CloudServ US', sourceCountry: 'Singapore', destinationCountry: 'USA', sourceChain: 'Polygon Amoy', destinationChain: 'Base Sepolia', amount: 75000, token: 'USDC', purpose: 'Payroll', urgency: 'Low', status: 'approved', corridor: 'SG → US', riskScore: 8, aiDecision: 'APPROVE', createdAt: '2025-04-27T13:00:00Z', updatedAt: '2025-04-27T13:02:00Z' },
-  { id: 'PAY-005', senderCompany: 'BlockFin UK', receiverCompany: 'DataMesh DE', sourceCountry: 'UK', destinationCountry: 'Germany', sourceChain: 'Base Sepolia', destinationChain: 'Polygon Amoy', amount: 320000, token: 'USDT', purpose: 'Supplier Payment', urgency: 'High', status: 'blocked', corridor: 'UK → DE', riskScore: 89, aiDecision: 'REJECT', createdAt: '2025-04-27T14:45:00Z', updatedAt: '2025-04-27T14:46:00Z' },
-  { id: 'PAY-006', senderCompany: 'TradeFlow IN', receiverCompany: 'LogiCorp SG', sourceCountry: 'India', destinationCountry: 'Singapore', sourceChain: 'Polygon Amoy', destinationChain: 'Base Sepolia', amount: 92000, token: 'USDC', purpose: 'Treasury Transfer', urgency: 'Medium', status: 'executed', corridor: 'IN → SG', riskScore: 15, aiDecision: 'APPROVE', createdAt: '2025-04-26T08:00:00Z', updatedAt: '2025-04-26T08:04:00Z' },
-];
+export function transformPayment(raw: any): Payment {
+  return {
+    id: raw.id,
+    senderCompany: raw.sender_company,
+    receiverCompany: raw.receiver_company,
+    sourceCountry: raw.source_country,
+    destinationCountry: raw.destination_country,
+    sourceChain: raw.source_chain,
+    destinationChain: raw.destination_chain,
+    amount: raw.amount,
+    token: raw.token,
+    purpose: raw.purpose,
+    urgency: raw.urgency,
+    status: raw.status,
+    corridor: `${raw.source_country} -> ${raw.destination_country}`,
+    riskScore: raw.risk_score ?? 0,
+    aiDecision: raw.ai_decision ?? 'N/A',
+    senderWallet: raw.sender_wallet,
+    receiverWallet: raw.receiver_wallet,
+    createdAt: raw.created_at,
+    updatedAt: raw.updated_at,
+  };
+}
 
 interface PaymentState {
   payments: Payment[];
@@ -19,10 +35,11 @@ interface PaymentState {
   setSelected: (p: Payment | null) => void;
   setLoading: (v: boolean) => void;
   updateStatus: (id: string, status: Payment['status']) => void;
+  fetchPayments: () => Promise<void>;
 }
 
 export const usePaymentStore = create<PaymentState>((set, get) => ({
-  payments: MOCK_PAYMENTS,
+  payments: [],
   selectedPayment: null,
   isLoading: false,
 
@@ -36,4 +53,15 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         p.id === id ? { ...p, status, updatedAt: new Date().toISOString() } : p
       ),
     }),
+  fetchPayments: async () => {
+    set({ isLoading: true });
+    try {
+      const { data } = await paymentApi.list();
+      set({ payments: (data || []).map(transformPayment) });
+    } catch (error) {
+      console.error('Failed to fetch payments:', error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
 }));

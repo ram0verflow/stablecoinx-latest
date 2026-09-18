@@ -57,6 +57,22 @@ def _run_async_in_thread(coro_factory, *args):
         db.close()
 
 
+def _trigger_response(  # FIXED: H5
+    flagged_count: int = 0,  # FIXED: H5
+    triggered_count: int = 0,  # FIXED: H5
+    message: str = "",  # FIXED: H5
+    **extra,  # FIXED: H5
+) -> dict:  # FIXED: H5
+    payload = {  # FIXED: H5
+        "status": "ok",  # FIXED: H5
+        "flagged_count": int(flagged_count),  # FIXED: H5
+        "triggered_count": int(triggered_count),  # FIXED: H5
+        "message": message or "Revalidation task queued",  # FIXED: H5
+    }  # FIXED: H5
+    payload.update(extra)  # FIXED: H5
+    return payload  # FIXED: H5
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.get("/", response_model=List[RevalidationResponse])
@@ -76,89 +92,127 @@ def get_revalidation_records(
 
 
 @router.post("/trigger")
-def trigger_revalidation(
+async def trigger_revalidation(
     data: RevalidationTrigger,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    """Manually trigger all revalidation checks (background)."""
-    background_tasks.add_task(
-        _run_async_in_thread,
-        RevalidationEngine.trigger_sanctions_update_revalidation,
+    """Trigger revalidation based on trigger_type in request body."""
+    trigger_type = data.trigger_type if hasattr(data, "trigger_type") else "sanctions"
+    if trigger_type == "sanctions":
+        background_tasks.add_task(
+            _run_async_in_thread, RevalidationEngine.trigger_sanctions_update_revalidation
+        )
+        return _trigger_response(triggered_count=1, trigger_type="sanctions")
+    if trigger_type == "policy":
+        corridors = data.corridors if hasattr(data, "corridors") else []
+        background_tasks.add_task(
+            _run_async_in_thread,
+            RevalidationEngine.trigger_policy_change_revalidation,
+            corridors,
+        )
+        return _trigger_response(triggered_count=len(corridors), trigger_type="policy", corridors=corridors)
+    if trigger_type == "wallet":
+        wallets = data.wallets if hasattr(data, "wallets") else []
+        background_tasks.add_task(
+            _run_async_in_thread,
+            RevalidationEngine.trigger_wallet_intelligence_revalidation,
+            wallets,
+        )
+        return _trigger_response(triggered_count=len(wallets), trigger_type="wallet", wallets=wallets)
+    if trigger_type == "issuer":
+        token = data.token if hasattr(data, "token") and data.token else "USDT"
+        risk_level = (
+            data.risk_level if hasattr(data, "risk_level") and data.risk_level else "high"
+        )
+        background_tasks.add_task(
+            _run_async_in_thread,
+            RevalidationEngine.trigger_issuer_risk_revalidation,
+            token,
+            risk_level,
+        )
+        return _trigger_response(triggered_count=1, trigger_type="issuer", token=token, risk_level=risk_level)
+    if trigger_type == "all":
+        background_tasks.add_task(
+            _run_async_in_thread, RevalidationEngine.trigger_sanctions_update_revalidation
+        )
+        background_tasks.add_task(
+            _run_async_in_thread,
+            RevalidationEngine.trigger_wallet_intelligence_revalidation,
+            [],
+        )
+        return _trigger_response(triggered_count=2, trigger_type="all")
+    raise HTTPException(
+        status_code=400,
+        detail=(
+            f"Unknown trigger_type: {trigger_type}. "
+            "Valid values: sanctions, policy, wallet, issuer, all"
+        ),
     )
-    return {"status": "triggered", "trigger_type": "manual_all",
-            "message": "Revalidation running in background"}
 
 
 @router.post("/trigger/sanctions")
-def trigger_sanctions_revalidation(
+async def trigger_sanctions(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    """Trigger sanctions list update revalidation (background)."""
     background_tasks.add_task(
         _run_async_in_thread,
         RevalidationEngine.trigger_sanctions_update_revalidation,
     )
-    return {"status": "triggered", "trigger_type": "sanctions_update",
-            "message": "Sanctions revalidation running in background"}
+    return _trigger_response(triggered_count=1, trigger_type="sanctions")
 
 
 @router.post("/trigger/policy")
-def trigger_policy_revalidation(
-    request: PolicyChangeRequest,
+async def trigger_policy(
+    data: dict,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    """Trigger policy rules change revalidation (background)."""
+    corridors = data.get("corridors", [])
     background_tasks.add_task(
         _run_async_in_thread,
         RevalidationEngine.trigger_policy_change_revalidation,
-        request.corridors,
+        corridors,
     )
-    return {"status": "triggered", "trigger_type": "policy_change",
-            "corridors": request.corridors,
-            "message": "Revalidation running in background"}
+    return _trigger_response(triggered_count=len(corridors), trigger_type="policy", corridors=corridors)
 
 
 @router.post("/trigger/wallet")
-def trigger_wallet_revalidation(
-    request: WalletIntelligenceRequest,
+async def trigger_wallet(
+    data: dict,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    """Trigger wallet intelligence update revalidation (background)."""
+    wallets = data.get("wallets", [])
     background_tasks.add_task(
         _run_async_in_thread,
         RevalidationEngine.trigger_wallet_intelligence_revalidation,
-        request.wallets,
+        wallets,
     )
-    return {"status": "triggered", "trigger_type": "wallet_intelligence",
-            "wallet_count": len(request.wallets),
-            "message": "Revalidation running in background"}
+    return _trigger_response(triggered_count=len(wallets), trigger_type="wallet", wallets=wallets)
 
 
 @router.post("/trigger/issuer")
-def trigger_issuer_revalidation(
-    request: IssuerRiskRequest,
+async def trigger_issuer(
+    data: dict,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    """Trigger issuer risk change revalidation (background)."""
+    token = data.get("token", "USDT")
+    risk_level = data.get("risk_level", "high")
     background_tasks.add_task(
         _run_async_in_thread,
         RevalidationEngine.trigger_issuer_risk_revalidation,
-        request.token,
-        request.risk_level,
+        token,
+        risk_level,
     )
-    return {"status": "triggered", "trigger_type": "issuer_risk",
-            "token": request.token, "risk_level": request.risk_level,
-            "message": "Issuer revalidation running in background"}
+    return _trigger_response(triggered_count=1, trigger_type="issuer", token=token, risk_level=risk_level)
 
 
 @router.get("/stats/summary")

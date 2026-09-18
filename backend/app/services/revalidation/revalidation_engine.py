@@ -174,8 +174,8 @@ class RevalidationEngine:
 
                 if original_decision:
                     original_policy = original_decision.country_policy_result or {}
-                    original_allowed = original_policy.get("allowed", False)
-                    new_allowed = country_policy.get("allowed", False)
+                    original_allowed = original_policy.get("is_allowed", False)
+                    new_allowed = country_policy.get("is_allowed", False)
 
                     # If policy decision changed
                     if original_allowed != new_allowed:
@@ -356,7 +356,14 @@ class RevalidationEngine:
         payment = db.query(PaymentIntent).filter(PaymentIntent.id == payment_id).first()
         if not payment:
             logger.error(f"Payment not found: {payment_id}")
-            return {}
+            return {
+                "original_decision": "unknown",
+                "new_decision": "unknown",
+                "changed": False,
+                "risk_delta": 0.0,
+                "engines_results": {},
+                "error": "payment_not_found",
+            }
 
         # Get original decision
         original_record = db.query(ComplianceDecision).filter(
@@ -374,10 +381,11 @@ class RevalidationEngine:
             country_policy = check_corridor(
                 db, payment.source_country, payment.destination_country, float(payment.amount)
             )
-            treasury_controls = {"pass": True}  # Simplified for demo
+            from app.services.governance.treasury_controls_service import check_treasury_controls
+            treasury_controls = check_treasury_controls(db, payment)
             compliance = run_compliance_checks(payment)
             wallet_graph = analyze_wallet(payment.sender_company)
-            issuer_risk = get_issuer_risk(payment.token)
+            issuer_risk = get_issuer_risk(db, payment.token)  # FIXED: M5
             chain_governance = check_chain(payment.source_chain, payment.destination_chain)
             liquidity = compute_best_route(payment)
 
@@ -429,11 +437,11 @@ class RevalidationEngine:
                 "changed": changed,
                 "risk_delta": risk_delta,
                 "engines_results": {
-                    "country_policy": country_policy.get("allowed", False),
-                    "compliance": compliance.get("passed", False),
+                    "country_policy": country_policy.get("is_allowed", False),
+                    "compliance": compliance.get("overall", "unknown"),
                     "wallet_risk": wallet_graph.get("overall_risk", "unknown"),
                     "issuer_risk": issuer_risk.get("risk_level", "unknown"),
-                    "chain_governance": chain_governance.get("allowed", False),
+                    "chain_governance": chain_governance.get("is_allowed", False),
                 },
             }
 
@@ -487,8 +495,19 @@ class RevalidationEngine:
                 )
 
                 # Update revalidation record with new scores
-                revalidation.new_decision = rescore_result.get("new_decision", "unknown")
-                revalidation.new_risk_score = rescore_result.get("risk_delta", 0)
+                revalidation.new_decision = rescore_result.get("new_decision", "unknown")  # FIXED: M4
+                previous_risk_score = 0.0  # FIXED: M4
+                if revalidation.payment and revalidation.payment.compliance_decisions:  # FIXED: M4
+                    latest_decision = sorted(  # FIXED: M4
+                        revalidation.payment.compliance_decisions,  # FIXED: M4
+                        key=lambda d: d.created_at,  # FIXED: M4
+                    )[-1]  # FIXED: M4
+                    wr = latest_decision.wallet_risk_result or {}  # FIXED: M4
+                    previous_risk_score = float(wr.get("risk_score", 0.0))  # FIXED: M4
+                risk_delta = float(rescore_result.get("risk_delta", 0))  # FIXED: M4
+                new_risk_score = round(previous_risk_score + risk_delta, 4)  # FIXED: M4 — absolute updated score
+                new_risk_score = max(0.0, min(1.0, new_risk_score))  # FIXED: M4
+                revalidation.new_risk_score = new_risk_score  # FIXED: M4
                 revalidation.status = RevalidationStatus.completed
 
                 # If decision changed, flag for review

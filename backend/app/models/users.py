@@ -6,7 +6,7 @@ from sqlalchemy import (
     Column, String, Boolean, DateTime, Enum, Text,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from app.db.database import Base
 
@@ -17,6 +17,7 @@ class UserRole(str, PyEnum):
     compliance_officer = "compliance_officer"
     auditor = "auditor"
     reviewer = "reviewer"
+    viewer = "viewer"
 
 
 class User(Base):
@@ -26,7 +27,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
-    role = Column(Enum(UserRole), nullable=False, default=UserRole.reviewer)
+    role = Column(Enum(UserRole), nullable=False, default=UserRole.viewer)  # FIXED: C2
     is_active = Column(Boolean, default=True)
     wallet_address = Column(String(42), nullable=True)
     ai_preference = Column(String(50), default="ollama")
@@ -41,6 +42,14 @@ class User(Base):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+
+    @validates("role")
+    def validate_role(self, key: str, value):
+        allowed = {e.value for e in UserRole}
+        raw = value.value if isinstance(value, UserRole) else str(value)
+        if raw not in allowed:
+            raise ValueError(f"Invalid role: {raw}. Must be one of {allowed}")
+        return value
 
     # Relationships
     payment_intents = relationship("PaymentIntent", back_populates="creator")

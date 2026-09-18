@@ -3,6 +3,8 @@ Tests for Execution Orchestrator.
 Verifies on-chain settlement and transaction flow.
 """
 
+import secrets
+
 import pytest
 from uuid import uuid4
 from sqlalchemy.orm import Session
@@ -124,9 +126,9 @@ def test_execution_succeeds_with_valid_approval(db_session: Session, test_approv
 
 def test_settlement_proof_registered_on_chain(db_session: Session, test_approved_payment):
     """Test settlement proof would be registered on-chain."""
-    # Simulate proof registration
-    tx_hash = "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
-    proof_tx_hash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+    # Simulate proof registration (non-literal tx hashes for Phase 5 sweep)
+    tx_hash = "0x" + secrets.token_hex(32)
+    proof_tx_hash = "0x" + secrets.token_hex(32)
     
     # In real execution, these would be actual transaction hashes
     assert len(tx_hash) == 66  # 0x + 64 hex chars

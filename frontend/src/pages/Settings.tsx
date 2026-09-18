@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ToastProvider';
-import { Shield, User, Wallet, Bell, Database, Lock } from 'lucide-react';
-import { RoleBadge } from '../components/StatusBadge';
-import { authApi, monitoringApi } from '../lib/api';
+import { 
+  Shield, User, Wallet, Bell, Database, Lock, 
+  Settings as SettingsIcon, RefreshCw, Activity,
+  Globe, Cpu, Server, Key, Network, Brain
+} from 'lucide-react';
+import { aiApi, authApi, monitoringApi } from '../lib/api';
 
 export const Settings: React.FC = () => {
   const { user, setWallet, updatePreference } = useAuthStore();
@@ -18,8 +21,11 @@ export const Settings: React.FC = () => {
     neo4j: false,
     redis: false,
   });
+  const [refreshing, setRefreshing] = useState(false);
+  const [aiModels, setAiModels] = useState({ ollama: 'ollama', groq: 'groq' });
 
   const refreshHealth = async () => {
+    setRefreshing(true);
     try {
       const { data } = await monitoringApi.stats();
       const aiUp = data.ai_engine_status !== 'down';
@@ -30,14 +36,21 @@ export const Settings: React.FC = () => {
         neo4j: !!data.neo4j_status,
         redis: !!data.redis_status,
       });
+      const health = await aiApi.getHealth();
+      setAiModels({
+        ollama: health.data?.ollama_model || 'ollama',
+        groq: health.data?.groq_model || 'groq',
+      });
     } catch {
       setServiceHealth({ ai: false, base: false, polygon: false, neo4j: false, redis: false });
+    } finally {
+      setTimeout(() => setRefreshing(false), 500);
     }
   };
 
   useEffect(() => {
     refreshHealth();
-    const timer = setInterval(refreshHealth, 10_000);
+    const timer = setInterval(refreshHealth, 30_000);
     return () => clearInterval(timer);
   }, []);
 
@@ -57,149 +70,147 @@ export const Settings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in pb-10">
-      <div className="mb-6">
-        <h1 className="page-title">Settings</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage profile, wallet, and system preferences</p>
-      </div>
+    <div className="max-w-4xl mx-auto animate-fade-in pb-20">
+      <header className="mb-10">
+        <div className="flex items-center gap-2 text-brand-primary text-[10px] font-black uppercase tracking-widest mb-2">
+            <SettingsIcon className="w-3 h-3" />
+            Configuration Portal
+        </div>
+        <h1 className="text-3xl font-extrabold text-white mb-2">System Settings</h1>
+        <p className="text-slate-500 font-medium">Manage your identity, security protocols, and system orchestration parameters.</p>
+      </header>
 
-      <div className="space-y-6">
-        {/* Profile */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <User className="w-5 h-5 text-indigo-400" />
-            <h3 className="section-title">User Profile</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Name</label>
-              <p className="text-slate-200 font-medium">{user?.name}</p>
+      <div className="space-y-8">
+        {/* User Identity Section */}
+        <div className="grid md:grid-cols-2 gap-6">
+            <div className="glass-card p-8 border-white/5 bg-white/[0.02]">
+                <h3 className="text-sm font-black uppercase tracking-widest text-white mb-8 flex items-center gap-2">
+                    <User className="w-4 h-4 text-brand-primary" />
+                    User Identity
+                </h3>
+                <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-slate-900 border border-white/10 flex items-center justify-center text-xl font-bold text-brand-primary shadow-inner">
+                            {user?.name?.charAt(0) || 'U'}
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-white">{user?.name}</p>
+                            <p className="text-xs text-slate-500">{user?.email}</p>
+                        </div>
+                    </div>
+                    <div className="pt-4 border-t border-white/5 space-y-4">
+                        <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Access Role</span>
+                            <span className="badge badge-pending">{user?.role}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Security Status</span>
+                            <span className="text-[10px] font-black text-emerald-400 flex items-center gap-1 uppercase tracking-tighter">
+                                <Shield className="w-3 h-3" /> VERIFIED
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Email</label>
-              <p className="text-slate-200">{user?.email}</p>
+
+            <div className="glass-card p-8 border-white/5 bg-white/[0.02]">
+                <h3 className="text-sm font-black uppercase tracking-widest text-white mb-8 flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-brand-secondary" />
+                    Web3 Integration
+                </h3>
+                {user?.walletAddress ? (
+                    <div className="space-y-6">
+                        <div className="p-4 rounded-xl bg-slate-950/50 border border-white/5">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Custodial Address</p>
+                            <p className="text-xs font-mono text-slate-300 break-all">{user.walletAddress}</p>
+                        </div>
+                        <button onClick={handleDisconnect} className="w-full btn-secondary py-3 text-xs border-rose-500/20 text-rose-400">
+                            Revoke Wallet Access
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-40 text-center">
+                        <div className="w-12 h-12 rounded-full bg-slate-900 border border-dashed border-slate-700 flex items-center justify-center mb-4">
+                            <Wallet className="w-5 h-5 text-slate-700" />
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium">No wallet detected.<br/>Connect via navigation bar.</p>
+                    </div>
+                )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Role</label>
-              <div className="mt-1">
-                {user?.role && <RoleBadge role={user.role} />}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Session</label>
-              <p className="text-emerald-400 text-sm font-medium flex items-center gap-1">
-                <Shield className="w-4 h-4" /> Authenticated
-              </p>
-            </div>
-          </div>
         </div>
 
-        {/* Wallet */}
-        <div className="glass-card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Wallet className="w-5 h-5 text-violet-400" />
-            <h3 className="section-title">Connected Wallet</h3>
-          </div>
-          {user?.walletAddress ? (
-            <div className="flex items-center justify-between bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                  <Wallet className="w-5 h-5 text-white" />
+        {/* Engine Config */}
+        <div className="glass-card p-8 border-white/5 bg-white/[0.02]">
+            <h3 className="text-sm font-black uppercase tracking-widest text-white mb-8 flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-violet-400" />
+                Pipeline Orchestration
+            </h3>
+            <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block ml-1">AI Decision Engine Model</label>
+                    <select
+                        value={aiEngine}
+                        onChange={(e) => setAiEngine(e.target.value)}
+                        className="select-field bg-slate-900/50"
+                    >
+                        <option value="ollama" className="bg-slate-900">{`Ollama (${aiModels.ollama}) - Local High-Privacy`}</option>
+                        <option value="groq" className="bg-slate-900">{`Groq (${aiModels.groq}) - Cloud Low-Latency`}</option>
+                    </select>
+                    <p className="text-[10px] text-slate-500 italic ml-1">Local inference is recommended for PII-sensitive compliance processing.</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-200">Custodial Signing Wallet</p>
-                  <p className="text-xs font-mono text-slate-400">{user.walletAddress}</p>
+                <div className="space-y-4">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block ml-1">Notifications Protocol</label>
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-slate-950/50">
+                        <div>
+                            <p className="text-xs font-bold text-slate-300">Telegram Infrastructure Alerting</p>
+                            <p className="text-[10px] text-slate-500">Real-time settlement lifecycle updates</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" checked={telegramAlerts} onChange={(e) => setTelegramAlerts(e.target.checked)} />
+                            <div className="w-10 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-primary peer-checked:after:bg-white"></div>
+                        </label>
+                    </div>
                 </div>
-              </div>
-              <button onClick={handleDisconnect} className="btn-secondary text-sm">Disconnect</button>
             </div>
-          ) : (
-            <p className="text-sm text-slate-500">No wallet connected. Connect from the top navigation bar.</p>
-          )}
         </div>
 
-        {/* Preferences */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="glass-card p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Database className="w-5 h-5 text-amber-400" />
-              <h3 className="section-title">System Configuration</h3>
+        {/* System Health */}
+        <div className="glass-card p-8 border-white/5 bg-white/[0.02]">
+            <div className="flex items-center justify-between mb-8">
+                <h3 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-emerald-400" />
+                    Infrastructure Health
+                </h3>
+                <button onClick={refreshHealth} disabled={refreshing} className="p-2 hover:bg-white/5 rounded-full text-slate-500 transition-colors">
+                    <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                </button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">AI Decision Engine</label>
-                <select
-                  value={aiEngine}
-                  onChange={(e) => setAiEngine(e.target.value)}
-                  className="select-field"
-                >
-                  <option value="ollama">Ollama (gemma:2b) - Local</option>
-                  <option value="groq">Groq (llama3-8b) - Cloud</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Policy Version</label>
-                <div className="input-field font-mono text-xs text-slate-500 cursor-not-allowed bg-slate-900/50">
-                  v2.4.1 (Hash: 0x8f2a...19cb)
-                </div>
-              </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {[
+                    { key: 'ai', label: 'Inference', icon: Brain },
+                    { key: 'base', label: 'Base L2', icon: Globe },
+                    { key: 'polygon', label: 'Polygon', icon: Network },
+                    { key: 'neo4j', label: 'Graph DB', icon: Database },
+                    { key: 'redis', label: 'Cache', icon: Server },
+                ].map((s) => {
+                    const up = serviceHealth[s.key as keyof typeof serviceHealth];
+                    const Icon = s.icon;
+                    return (
+                        <div key={s.key} className="p-4 rounded-2xl border border-white/5 bg-slate-950/50 text-center group hover:border-white/10 transition-colors">
+                            <div className={`w-2 h-2 rounded-full mx-auto mb-3 ${up ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'}`} />
+                            <Icon className="w-5 h-5 mx-auto mb-2 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{s.label}</p>
+                            <p className={`text-[10px] font-bold ${up ? 'text-emerald-400' : 'text-rose-400'}`}>{up ? 'ONLINE' : 'OFFLINE'}</p>
+                        </div>
+                    );
+                })}
             </div>
-          </div>
-
-          <div className="glass-card p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Bell className="w-5 h-5 text-sky-400" />
-              <h3 className="section-title">Notifications</h3>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-200">Telegram Alerts</p>
-                  <p className="text-xs text-slate-500">Receive critical workflow alerts via bot</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" checked={telegramAlerts} onChange={(e) => setTelegramAlerts(e.target.checked)} />
-                  <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
-                </label>
-              </div>
-            </div>
-          </div>
         </div>
 
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-title">Live Service Status</h3>
-            <button onClick={refreshHealth} className="btn-secondary text-xs">Refresh</button>
-          </div>
-          <div className="grid grid-cols-5 gap-3">
-            {[
-              { key: 'ai', label: 'AI Engine' },
-              { key: 'base', label: 'Base RPC' },
-              { key: 'polygon', label: 'Polygon RPC' },
-              { key: 'neo4j', label: 'Neo4j' },
-              { key: 'redis', label: 'Redis' },
-            ].map((s) => {
-              const up = serviceHealth[s.key as keyof typeof serviceHealth];
-              return (
-                <div key={s.key} className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 text-center">
-                  <div className={`mx-auto mb-2 h-2.5 w-2.5 rounded-full ${up ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                  <p className="text-xs text-slate-300">{s.label}</p>
-                  <button
-                    className="mt-2 text-[10px] text-indigo-300 hover:text-indigo-200"
-                    onClick={() => showToast(up ? 'success' : 'error', `${s.label} test`, up ? 'Connection healthy' : 'Connection failed')}
-                  >
-                    Test Connection
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-4">
-          <button onClick={handleSave} className="btn-primary flex items-center gap-2">
-            <Lock className="w-4 h-4" /> Save Preferences
-          </button>
+        <div className="flex justify-end pt-4 gap-4">
+            <button onClick={handleSave} className="btn-primary py-4 px-10 text-xs flex items-center gap-2 shadow-brand-primary/10">
+                <Key className="w-4 h-4" /> Commit Protocol Changes
+            </button>
         </div>
       </div>
     </div>

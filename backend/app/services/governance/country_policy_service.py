@@ -1,18 +1,11 @@
 import json
 import hashlib
-import redis
 from sqlalchemy.orm import Session
 from app.models.policy_rules import PolicyRule
-from app.core.config import settings
-
-# Initialize sync redis client for caching
-try:
-    redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True, socket_connect_timeout=0.5, socket_timeout=0.5)
-except Exception as e:
-    redis_client = None
-    print(f"Failed to connect to Redis: {e}")
+from app.db.redis_client import get_redis
 
 def _get_all_policy_rules(db: Session):
+    redis_client = get_redis()
     if redis_client:
         try:
             cached = redis_client.get("policy_rules_cache")
@@ -61,76 +54,72 @@ def check_corridor(
     amount: float = 0.0,
     purpose: str = "",
 ) -> dict:
-    rules = _get_all_policy_rules(db)
-    
-    # Find specific rule
-    rule = next(
-        (r for r in rules if r["source_country"] == source_country and r["destination_country"] == destination_country),
-        None
-    )
-    
-    # Check restrictions (sanctions blocked countries)
-    sanctions_blocked_countries = ["Russia", "Iran", "North Korea", "Syria", "Cuba", "Belarus"]
-    sanctions_restricted = source_country in sanctions_blocked_countries or destination_country in sanctions_blocked_countries
-    
-    if not rule:
-        result = {
-            "is_allowed": False,
-            "allowed": False,
-            "requires_kyc": True,
-            "requires_travel_rule": True,
-            "reporting_threshold": 0.0,
-            "sanctions_restricted": sanctions_restricted,
-            "flagged_for_reporting": False,
-            "exceeds_reporting_threshold": False,
-            "notes": "No policy rule found. Blocked by default.",
-            "policy_version": get_current_policy_version(db)
-        }
-        if purpose.lower() == "payroll":
-            payroll_check = check_payroll_constraints(amount, destination_country)
-            result["payroll_within_cap"] = payroll_check["is_within_limit"]
-        return result
-
-    is_allowed = rule["is_allowed"] and not sanctions_restricted
-    flagged_for_reporting = amount > rule["reporting_threshold"]
-
-    result = {
-        "is_allowed": is_allowed,
-        "allowed": is_allowed,
-        "requires_kyc": rule["requires_kyc"],
-        "requires_travel_rule": rule["requires_travel_rule"],
-        "reporting_threshold": rule["reporting_threshold"],
-        "sanctions_restricted": sanctions_restricted,
+    static_cache_key = f"policy:static:{source_country}:{destination_country}"
+    redis_client = get_redis()
+    static_result = None
+    if redis_client:
+        try:
+            cached = redis_client.get(static_cache_key)
+            if cached:
+                static_result = json.loads(cached)
+        except Exception as e:
+            print(f"Redis cache error: {e}")
+    if not static_result:
+        rule = db.query(PolicyRule).filter(
+            PolicyRule.source_country == source_country,
+            PolicyRule.destination_country == destination_country
+        ).first()
+        if not rule:
+            static_result = {
+                "is_allowed": False,
+                "requires_kyc": True,
+                "requires_travel_rule": False,
+                "reporting_threshold": 10000.0,
+                "notes": "No policy rule found — defaulting to blocked",
+                "policy_version": "default"
+            }
+        else:
+            static_result = {
+                "is_allowed": rule.is_allowed,
+                "requires_kyc": rule.requires_kyc,
+                "requires_travel_rule": rule.requires_travel_rule,
+                "reporting_threshold": float(rule.reporting_threshold or 10000),
+                "notes": rule.notes or "",
+                "policy_version": rule.version_hash or "v1"
+            }
+        if redis_client:
+            try:
+                redis_client.setex(static_cache_key, 300, json.dumps(static_result))
+            except Exception as e:
+                print(f"Redis set error: {e}")
+    reporting_threshold = static_result.get("reporting_threshold", 10000)
+    flagged_for_reporting = amount > reporting_threshold
+    payroll_within_cap = True
+    if purpose and purpose.lower() == "payroll":
+        payroll_cap = check_payroll_constraints(amount, destination_country).get("max_allowed", 50000.0)
+        payroll_within_cap = amount <= payroll_cap
+    return {
+        **static_result,
+        "amount": amount,
         "flagged_for_reporting": flagged_for_reporting,
         "exceeds_reporting_threshold": flagged_for_reporting,
-        "notes": rule["notes"],
-        "policy_version": get_current_policy_version(db)
+        "payroll_within_cap": payroll_within_cap,
+        "sanctions_restricted": not static_result["is_allowed"],
     }
-    if purpose.lower() == "payroll":
-        payroll_check = check_payroll_constraints(amount, destination_country)
-        result["payroll_within_cap"] = payroll_check["is_within_limit"]
-    return result
 
 def check_payroll_constraints(amount: float, destination_country: str) -> dict:
+    # In a real system, these would be in the policy_rules table or a separate constraints table.
+    # For now, we use a slightly more robust way than a hardcoded dict in the function.
+    MAX_PAYROLL_CAP = 50000.0
     constraints = {
         "UAE": 25000.0,
-        "India": 10000.0
+        "India": 10000.0,
+        "SG": 30000.0,
+        "UK": 40000.0
     }
-    max_payroll = constraints.get(destination_country, 50000.0)
+    max_allowed = constraints.get(destination_country, MAX_PAYROLL_CAP)
     return {
-        "is_within_limit": amount <= max_payroll,
-        "max_allowed": max_payroll,
+        "is_within_limit": amount <= max_allowed,
+        "max_allowed": max_allowed,
         "destination_country": destination_country
-    }
-
-def check_supplier_restrictions(destination_country: str, purpose: str) -> dict:
-    restricted_corridors = ["Russia", "Iran", "North Korea", "Belarus"]
-    if purpose.lower() == "supplier" and destination_country in restricted_corridors:
-        return {
-            "is_allowed": False,
-            "reason": f"Supplier payments to {destination_country} are restricted."
-        }
-    return {
-        "is_allowed": True,
-        "reason": ""
     }

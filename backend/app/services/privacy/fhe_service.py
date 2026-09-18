@@ -118,7 +118,7 @@ def fhe_check_threshold(amount: float, threshold: float, label: str) -> dict[str
     }
 
 
-def run_all_fhe_checks(payment) -> dict[str, Any]:
+def run_all_fhe_checks(payment, db=None) -> dict[str, Any]:
     """
     Run all standard FHE threshold checks for a payment.
     Returns a structured bundle with individual check results.
@@ -126,13 +126,20 @@ def run_all_fhe_checks(payment) -> dict[str, Any]:
     amount = float(payment.amount)
     purpose = (payment.purpose or "").lower()
 
-    # Fetch reporting threshold from country policy (default 10 000)
-    reporting_threshold = 10_000.0
+    threshold = 10000.0
+    if db is not None:
+        from app.models.policy_rules import PolicyRule
+        rule = db.query(PolicyRule).filter(
+            PolicyRule.source_country == payment.source_country,
+            PolicyRule.destination_country == payment.destination_country
+        ).first()
+        if rule and rule.reporting_threshold:
+            threshold = float(rule.reporting_threshold)
 
     checks = [
         fhe_check_threshold(amount, 500_000.0, "daily_limit_check"),
         fhe_check_threshold(amount, 100_000.0, "dual_approval_check"),
-        fhe_check_threshold(amount, reporting_threshold, "reporting_check"),
+        fhe_check_threshold(amount, threshold, "reporting_check"),
     ]
 
     if "payroll" in purpose:

@@ -6,6 +6,7 @@ def apply_veto(pipeline_results: dict, ai_decision: str) -> FinalDecision:
     treasury_controls = pipeline_results.get("treasury_controls", {})
     compliance = pipeline_results.get("compliance", {})
     wallet_graph = pipeline_results.get("wallet_graph", {})
+    issuer_risk = pipeline_results.get("issuer_risk", {})
     
     # Rules:
     # If country_policy is_allowed=False → BLOCK regardless of AI
@@ -19,6 +20,18 @@ def apply_veto(pipeline_results: dict, ai_decision: str) -> FinalDecision:
     # If internal_blacklist_hit=True → BLOCK regardless of AI
     if compliance.get("internal_blacklist_hit", False):
         return FinalDecision.blocked
+
+    # Explicit fail/bypass from treasury controls
+    if treasury_controls.get("daily_limit_ok") is False:
+        return FinalDecision.blocked
+    if treasury_controls.get("department_budget_ok") is False:
+        return FinalDecision.blocked
+
+    # High/critical issuer risk can block
+    issuer_level = str(issuer_risk.get("risk_level", "")).lower()
+    issuer_reco = str(issuer_risk.get("recommendation", "")).lower()
+    if issuer_level in ("high", "critical") or issuer_reco in ("avoid", "blocked"):
+        return FinalDecision.blocked
         
     # If wallet risk_score > 0.8 → force REVIEW regardless of AI
     if wallet_graph.get("risk_score", 0.0) > 0.8:
@@ -29,7 +42,7 @@ def apply_veto(pipeline_results: dict, ai_decision: str) -> FinalDecision:
         return FinalDecision.pending_review
         
     # Otherwise → use AI decision (map it to FinalDecision)
-    ai_decision = ai_decision.lower()
+    ai_decision = str(ai_decision or "").lower()
     if ai_decision == "block":
         return FinalDecision.blocked
     elif ai_decision == "review":

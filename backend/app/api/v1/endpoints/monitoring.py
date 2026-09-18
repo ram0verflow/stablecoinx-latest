@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-import redis
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
@@ -15,39 +14,14 @@ from app.models.payment_intents import PaymentIntent, PaymentStatus
 from app.models.users import User
 from app.services.ai.ai_health_service import get_active_ai_engine
 from app.services.blockchain.rpc_service import rpc_service
-from app.services.compliance.wallet_graph_service import get_neo4j_driver
-from app.core.config import settings
+from app.services.compliance.wallet_graph_service import wallet_graph_service
+from app.db.redis_client import get_redis
 
 router = APIRouter()
 
 
-def _redis_status() -> bool:
-    try:
-        client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True, socket_connect_timeout=0.5, socket_timeout=0.5)
-        return bool(client.ping())
-    except Exception:
-        return False
-
-
-def _neo4j_status() -> bool:
-    try:
-        driver = get_neo4j_driver()
-        if not driver:
-            return False
-        import concurrent.futures
-        def _check():
-            with driver.session() as session:
-                session.run("RETURN 1").single()
-            return True
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(_check)
-            return future.result(timeout=5)
-    except Exception:
-        return False
-
-
 @router.get("/stats")
-def monitoring_stats(
+async def monitoring_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -59,7 +33,7 @@ def monitoring_stats(
         approved_today = (
             db.query(func.count(PaymentIntent.id))
             .filter(
-                PaymentIntent.status == PaymentStatus.approved,
+                PaymentIntent.status == PaymentStatus.executed,
                 PaymentIntent.updated_at >= day_start,
             )
             .scalar()
@@ -136,6 +110,22 @@ def monitoring_stats(
                 }
             )
 
+        redis_ok = False
+        try:
+            r = get_redis()
+            if r:
+                r.ping()
+                redis_ok = True
+        except Exception:
+            redis_ok = False
+
+        neo4j_ok = False
+        try:
+            if wallet_graph_service.driver:
+                wallet_graph_service.driver.verify_connectivity()
+                neo4j_ok = True
+        except Exception:
+            neo4j_ok = False
         ai_engine = get_active_ai_engine()
         ai_engine_status = "down" if ai_engine == "none" else ai_engine
 
@@ -152,8 +142,8 @@ def monitoring_stats(
                 "base_sepolia": rpc_service.check_rpc_health("base_sepolia"),
                 "polygon_amoy": rpc_service.check_rpc_health("polygon_amoy"),
             },
-            "neo4j_status": _neo4j_status(),
-            "redis_status": _redis_status(),
+            "neo4j_status": neo4j_ok,
+            "redis_status": redis_ok,
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error fetching monitoring stats: {exc}")

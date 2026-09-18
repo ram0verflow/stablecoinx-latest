@@ -5,6 +5,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
 
 echo "==> Resetting demo data"
+
+# FIXED: L3
+if [ "${APP_ENV:-}" != "demo" ]; then
+  echo "ERROR: reset_demo.sh only runs when APP_ENV=demo"
+  exit 1
+fi
 cd "$BACKEND_DIR"
 
 python - <<'PY'

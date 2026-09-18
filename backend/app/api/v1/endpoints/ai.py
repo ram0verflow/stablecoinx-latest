@@ -8,17 +8,25 @@ from app.models.payment_intents import PaymentIntent
 from app.models.compliance_decisions import ComplianceDecision
 from app.api.dependencies import get_current_user
 from app.models.users import User
-from app.services.ai.ai_health_service import get_active_ai_engine
+from app.services.ai.ai_health_service import get_active_ai_engine, check_ollama_health, check_groq_health
+from app.core.config import settings
 from app.api.v1.endpoints.payments import process_payment_background
 
 router = APIRouter()
 
 @router.get("/health")
 def get_health() -> Any:
+    ollama_ok, ollama_latency = check_ollama_health()
+    groq_ok, groq_latency = check_groq_health()
     engine = get_active_ai_engine()
     return {
+        "ollama_active": ollama_ok,
+        "groq_active": groq_ok,
         "active_engine": engine,
-        "status": "online" if engine != "none" else "offline"
+        "ollama_model": settings.OLLAMA_MODEL.strip(),
+        "groq_model": settings.GROQ_MODEL.strip(),
+        "ollama_latency_ms": ollama_latency,
+        "groq_latency_ms": groq_latency,
     }
 
 @router.post("/analyze/{payment_id}")

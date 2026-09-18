@@ -1,4 +1,9 @@
+import logging
+
 from app.models.payment_intents import PaymentIntent
+from app.services.blockchain.rpc_service import rpc_service
+
+logger = logging.getLogger(__name__)
 
 def normalize_chain_name(chain: str) -> str:
     return chain.lower().replace(" ", "_")
@@ -8,12 +13,22 @@ def compute_best_route(payment: PaymentIntent) -> dict:
     dst_chain = normalize_chain_name(payment.destination_chain)
     amount = float(payment.amount)
     
-    # Base Sepolia parameters
-    base_gas = 0.50
+    try:
+        base_gas_wei = rpc_service.get_gas_price("base_sepolia")
+        base_gas_gwei = base_gas_wei / 1e9
+        base_gas = (base_gas_gwei * 65000) / 1e9 * 3000
+    except Exception as exc:
+        logger.warning(f"Base Sepolia gas price RPC failed ({exc}), using fallback constant 0.50 USD")
+        base_gas = 0.50
     base_slippage_pct = 0.05
     
-    # Polygon Amoy parameters
-    amoy_gas = 0.02
+    try:
+        amoy_gas_wei = rpc_service.get_gas_price("polygon_amoy")
+        amoy_gas_gwei = amoy_gas_wei / 1e9
+        amoy_gas = (amoy_gas_gwei * 65000) / 1e9 * 1.0
+    except Exception as exc:
+        logger.warning(f"Polygon Amoy gas price RPC failed ({exc}), using fallback constant 0.02 USD")
+        amoy_gas = 0.02
     amoy_slippage_pct = 0.08
     
     routes = []

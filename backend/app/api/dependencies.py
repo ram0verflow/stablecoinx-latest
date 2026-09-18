@@ -10,7 +10,15 @@ from app.core.security import verify_token
 from app.db.database import get_db
 from app.models.users import User, UserRole
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.BACKEND_URL}/api/v1/auth/login")
+
+def _oauth_token_url() -> str:
+    base = (settings.BACKEND_URL or settings.FRONTEND_URL or "").strip().rstrip("/")
+    if base:
+        return f"{base}/api/v1/auth/login"
+    return "/api/v1/auth/login"
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=_oauth_token_url())
 
 def get_current_user(
     db: Session = Depends(get_db),
@@ -42,15 +50,30 @@ def get_current_user(
     return user
 
 
-def require_role(roles: List[str]):
-    def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in roles:
+def require_roles(allowed_roles: List[str]):
+    """
+    Dependency factory for role-based access control.
+    Works correctly whether role is a str enum or plain str.
+    """
+    def role_checker(current_user: User = Depends(get_current_user)) -> User:
+        user_role = (
+            current_user.role.value
+            if hasattr(current_user.role, "value")
+            else str(current_user.role)
+        )
+        if user_role not in allowed_roles:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=(
-                    f"Unauthorized role '{current_user.role}'. "
-                    f"Required roles: {', '.join(roles)}"
-                ),
+                status_code=403,
+                detail={
+                    "error": "Insufficient permissions",
+                    "required_roles": allowed_roles,
+                    "your_role": user_role,
+                },
             )
         return current_user
     return role_checker
+
+
+def require_role(roles: List[str]):
+    """Backward-compatible alias."""
+    return require_roles(roles)

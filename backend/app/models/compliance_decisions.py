@@ -38,6 +38,8 @@ class ComplianceDecision(Base):
         nullable=False,
     )
     country_policy_result = Column(JSON, nullable=True)
+    treasury_controls_result = Column(JSON, nullable=True)  # FIXED: C4
+    compliance_result = Column(JSON, nullable=True)  # FIXED: C4
     wallet_risk_result = Column(JSON, nullable=True)
     issuer_risk_result = Column(JSON, nullable=True)
     chain_governance_result = Column(JSON, nullable=True)

@@ -3,28 +3,42 @@ from datetime import datetime, timedelta, timezone
 from app.models.payment_intents import PaymentIntent
 
 SANCTIONED_ENTITIES = [
-    "Zephyr Holdings LLC", "Meridian Trade Co", "Northern Star Corp", 
-    "BlackRock Offshore Ltd", "Vortex Dynamics", "Crimson Enterprises",
-    "Shadow Nexus Inc", "Obsidian Logistics", "Goliath Corporation",
-    "Spectre Syndicate", "Rogue Ventures", "Phantom Trading",
-    "Abyss Capital", "Nemesis Industries", "Ironclad Holdings"
+    "tehran trade co",
+    "pyongyang exports",
+    "moscow shell corp",
+    "northern capital llc",
+    "crimea holdings",
+    "minsk trade partners",
+    "havana commodities",
+    "damascus finance group",
+    "tripoli assets ltd",
+    "caracas global trade",
+    "tehran metals corp",
+    "iran petrochemical co",
+    "russia defense exports",
+    "belarus state trade",
+    "north korea mining"
 ]
 
 SANCTIONED_WALLETS = [
-    "0xBAD0000000000000000000000000000000000001",
-    "0xBAD0000000000000000000000000000000000002",
-    "0xBAD0000000000000000000000000000000000003",
-    "0xBAD0000000000000000000000000000000000004",
-    "0xBAD0000000000000000000000000000000000005",
-    "0xBAD0000000000000000000000000000000000006",
-    "0xBAD0000000000000000000000000000000000007",
-    "0xBAD0000000000000000000000000000000000008",
-    "0xBAD0000000000000000000000000000000000009",
-    "0xBAD0000000000000000000000000000000000010",
+    "0xdead111111111111111111111111111111111111",
+    "0xdead222222222222222222222222222222222222",
+    "0xdead333333333333333333333333333333333333",
+    "0xdead444444444444444444444444444444444444",
+    "0xdead555555555555555555555555555555555555",
+    "0xba00000000000000000000000000000000000001",
+    "0xba00000000000000000000000000000000000002",
+    "0xfade000000000000000000000000000000000001",
+    "0xfade000000000000000000000000000000000002",
+    "0xcafe000000000000000000000000000000000001",
 ]
 
 INTERNAL_BLACKLIST = [
-    "FraudCorp", "ScamLLC", "FakeBiz", "MoneyLaunder Inc", "SketchyTrade"
+    "blacklisted corp",
+    "fraud entity inc",
+    "shell company xyz",
+    "offshore dummy ltd",
+    "anonymous holdings"
 ]
 
 def check_sanctions(company_name: str, wallet_address: str = "") -> dict:
@@ -33,14 +47,14 @@ def check_sanctions(company_name: str, wallet_address: str = "") -> dict:
     # Fuzzy match on company name (contains check)
     for entity in SANCTIONED_ENTITIES:
         if entity.lower() in company_lower or company_lower in entity.lower():
-            return {"hit": True, "matched_entity": entity, "type": "company"}
+            return {"hit": True, "sanctions_hit": True, "matched_entity": entity, "type": "company"}
             
     # Exact match on wallet address
     if wallet_address:
         if wallet_address.lower() in [w.lower() for w in SANCTIONED_WALLETS]:
-            return {"hit": True, "matched_entity": wallet_address, "type": "wallet"}
+            return {"hit": True, "sanctions_hit": True, "matched_entity": wallet_address, "type": "wallet"}
             
-    return {"hit": False, "matched_entity": None, "type": None}
+    return {"hit": False, "sanctions_hit": False, "matched_entity": None, "type": None}
 
 def check_kyc_status(company_name: str) -> dict:
     company_lower = company_name.lower()

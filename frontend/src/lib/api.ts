@@ -1,6 +1,5 @@
 import axios from 'axios';
 import type {
-  LoginRequest,
   AuthResponse,
   CreatePaymentRequest,
   Payment,
@@ -8,25 +7,44 @@ import type {
   Alert,
   MonitoringStats,
 } from '../types';
+import { getStoredToken, removeStoredAuth } from './authStorage'; // FIXED: A5
+import { useAuthStore } from '../store/authStore'; // FIXED: A5 — clear Zustand on 401
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+if (!import.meta.env.VITE_API_BASE_URL && !import.meta.env.VITE_BACKEND_URL) {
+  console.error('Missing VITE_API_BASE_URL (or VITE_BACKEND_URL) environment variable');
+}
 
 const api = axios.create({
-  baseURL: `${API_BASE}/api/v1`,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: `${API_BASE}/api/v1`, // FIXED: PHASE5
+  headers: { 'Content-Type': 'application/json' }, // FIXED: PHASE5
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('sg_token');
+  const token = getStoredToken(); // FIXED: A5
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`; // FIXED: A5
   }
-  return config;
+  return config; // FIXED: A5
 });
 
+api.interceptors.response.use(
+  (res) => res, // FIXED: A5
+  (err) => {
+    if (err.response?.status === 401) {
+      useAuthStore.getState().logout(); // FIXED: A5 — clears Supabase + persisted JWT/user
+      window.location.href = '/login'; // FIXED: A5
+    }
+    return Promise.reject(err); // FIXED: A5
+  },
+); // FIXED: A5
+
 export const authApi = {
-  login: (data: LoginRequest) => api.post<AuthResponse>('/auth/login', data),
-  updatePreference: (preference: string) => api.patch('/auth/me/preference', { ai_preference: preference }),
+  login: (data: { email: string; password: string }) => api.post<AuthResponse>('/auth/login', data), // FIXED: A2
+  register: (data: { email: string; password: string; full_name: string }) =>
+    api.post<AuthResponse>('/auth/register', data), // FIXED: A2
+  updatePreference: (preference: string) => api.patch('/auth/me/preference', { ai_preference: preference }), // FIXED: A5
+  getRoles: () => axios.get<{roles: {value: string, label: string}[]}>(`${API_BASE}/api/v1/auth/roles`),
 };
 
 export const paymentApi = {
@@ -62,11 +80,18 @@ export const alertApi = {
 
 export const revalidationApi = {
   list: () => api.get('/revalidation'),
-  trigger: () => api.post('/revalidation/trigger'),
+  trigger: (data: {
+    trigger_type: string;
+    corridors?: string[];
+    wallets?: string[];
+    token?: string;
+    risk_level?: string;
+  }) => api.post('/revalidation/trigger', data),
   triggerSanctions: () => api.post('/revalidation/trigger/sanctions'),
   triggerPolicy: (corridors?: string[]) => api.post('/revalidation/trigger/policy', { corridors: corridors || [] }),
   triggerWallet: (wallets?: string[]) => api.post('/revalidation/trigger/wallet', { wallets: wallets || [] }),
-  triggerIssuer: (token?: string, riskLevel?: string) => api.post('/revalidation/trigger/issuer', { token: token || '', risk_level: riskLevel || '' }),
+  triggerIssuer: (token?: string, riskLevel?: string) =>
+    api.post('/revalidation/trigger/issuer', { token: token || '', risk_level: riskLevel || '' }),
   getDetail: (id: string) => api.get(`/revalidation/${id}`),
   rescore: (paymentId: string) => api.post(`/revalidation/rescore/${paymentId}`),
   getStats: () => api.get('/revalidation/stats/summary'),
@@ -83,6 +108,18 @@ export const privacyApi = {
   generateZkProofs: (paymentId: string) => api.post(`/privacy/zk-proof/${paymentId}`),
   getProofs: (paymentId: string) => api.get(`/privacy/proofs/${paymentId}`),
   verifyProofs: (paymentId: string) => api.post(`/privacy/verify/${paymentId}`),
+};
+
+export const executionApi = {
+  execute: (paymentId: string) => api.post(`/execution/execute/${paymentId}`),
+  status: (paymentId: string) => api.get(`/execution/status/${paymentId}`),
+  auditTrail: (paymentId: string) => api.get(`/execution/audit/${paymentId}`),
+};
+
+export const walletApi = {
+  connect: (address: string) => api.post('/wallet/connect', { address }),
+  balance: (address: string) => api.get(`/wallet/balance/${address}`),
+  networkStatus: () => api.get('/wallet/network-status'),
 };
 
 export default api;

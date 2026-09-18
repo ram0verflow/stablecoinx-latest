@@ -4,7 +4,8 @@ export type UserRole =
   | 'Treasury Officer'
   | 'Compliance Officer'
   | 'Auditor'
-  | 'Reviewer';
+  | 'Reviewer'
+  | 'Viewer';
 
 export interface User {
   id: string;
@@ -38,15 +39,36 @@ export type PaymentStatus =
   | 'review'
   | 'revalidation';
 
-export type Token = 'USDC' | 'USDT';
+export type Token = 'USDC' | 'USDT' | 'DAI' | 'BUSD' | 'TUSD';
 export type Urgency = 'Low' | 'Medium' | 'High' | 'Critical';
-export type Chain = 'Base Sepolia' | 'Polygon Amoy';
-export type Country = 'Singapore' | 'USA' | 'UK' | 'UAE' | 'India' | 'Germany';
+export type Chain = 'Base Sepolia' | 'Polygon Amoy' | 'Ethereum Mainnet' | 'Arbitrum' | 'Optimism';
+// FIXED: L2
+export type Country =
+  | 'SG'
+  | 'USA'
+  | 'UK'
+  | 'UAE'
+  | 'India'
+  | 'Germany'
+  | 'Singapore'
+  | 'Hong Kong'
+  | 'Egypt'
+  | 'Japan'
+  | 'South Korea'
+  | 'Russia'
+  | 'Iran'
+  | 'North Korea'
+  | 'Switzerland'
+  | 'Canada'
+  | 'Australia';
 export type Purpose =
   | 'Payroll'
   | 'Supplier Payment'
   | 'Treasury Transfer'
-  | 'Cross-border Settlement';
+  | 'Cross-border Settlement'
+  | 'Invoice Payment'
+  | 'Refund'
+  | 'Dividend Payment';
 
 export interface Payment {
   id: string;
@@ -64,6 +86,8 @@ export interface Payment {
   corridor: string;
   riskScore: number;
   aiDecision: string;
+  senderWallet?: string;
+  receiverWallet: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -79,6 +103,8 @@ export interface CreatePaymentRequest {
   token: Token;
   purpose: Purpose;
   urgency: Urgency;
+  senderWallet?: string;
+  receiverWallet: string;
 }
 
 // ── Alert ────────────────────────────────────────────────────
@@ -226,6 +252,7 @@ export interface RevalidationRecord {
 
 export interface MonitoringStats {
   total_payments: number;
+  total_volume: number;
   approved_today: number;
   blocked_today: number;
   pending_review: number;

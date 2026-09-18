@@ -40,6 +40,12 @@ def list_reports(
             audit_record = db.query(AuditRecord).filter(
                 AuditRecord.payment_id == payment.id
             ).first()
+            
+            # Fetch the most recent compliance decision for the ai_decision
+            from app.models.compliance_decisions import ComplianceDecision
+            decision = db.query(ComplianceDecision).filter(
+                ComplianceDecision.payment_id == payment.id
+            ).order_by(ComplianceDecision.created_at.desc()).first()
 
             if audit_record:
                 reports.append({
@@ -50,6 +56,8 @@ def list_reports(
                     "token": payment.token,
                     "corridor": f"{payment.source_country} → {payment.destination_country}",
                     "status": payment.status.value,
+                    "ai_decision": (decision.ai_decision.value if decision and decision.ai_decision else "N/A"),
+                    "zk_proof": audit_record.zk_proof_reference or audit_record.on_chain_proof_hash or "Not Generated",
                 })
 
         return {"total": len(reports), "reports": reports}

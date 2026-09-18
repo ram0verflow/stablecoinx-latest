@@ -6,7 +6,7 @@ from uuid import UUID
 from app.db.database import get_db
 from app.schemas import ApprovalCreate, ApprovalResponse
 from app.models.approvals import Approval
-from app.api.dependencies import get_current_user, require_role
+from app.api.dependencies import get_current_user, require_roles
 from app.models.users import User
 
 router = APIRouter()
@@ -16,7 +16,7 @@ def submit_approval(
     payment_id: UUID,
     approval_in: ApprovalCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["admin", "treasury_officer"]))
+    current_user: User = Depends(require_roles(["admin", "treasury_officer"]))
 ) -> Any:
     approval = Approval(
         payment_id=payment_id,

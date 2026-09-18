@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 
 
 # ── Enums ─────────────────────────────────────────────────────
@@ -13,6 +13,14 @@ class UserRoleEnum(str, Enum):
     compliance_officer = "compliance_officer"
     auditor = "auditor"
     reviewer = "reviewer"
+    viewer = "viewer"
+
+
+class AdminAssignableRole(str, Enum):  # FIXED: C2
+    viewer = "viewer"  # FIXED: C2
+    compliance_officer = "compliance_officer"  # FIXED: C2
+    treasury = "treasury"  # FIXED: C2
+    admin = "admin"  # FIXED: C2
 
 
 class PaymentStatusEnum(str, Enum):
@@ -68,13 +76,13 @@ class UserCreate(BaseModel):
     email: str
     password: str
     full_name: str
-    role: UserRoleEnum = UserRoleEnum.reviewer
+    # FIXED: C2
+    # Role is assigned server-side at registration.
 
 
 class UserLogin(BaseModel):
     email: str
     password: str
-    role: Optional[UserRoleEnum] = None
 
 
 class UserResponse(BaseModel):
@@ -88,6 +96,20 @@ class UserResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class UserListResponse(BaseModel):
+    id: UUID
+    email: str
+    role: UserRoleEnum
+    created_at: datetime
+    is_active: bool  # FIXED: H1
+
+    model_config = {"from_attributes": True}
+
+
+class UserRoleUpdate(BaseModel):
+    role: AdminAssignableRole  # FIXED: C2
 
 
 class TokenResponse(BaseModel):
@@ -108,6 +130,16 @@ class PaymentCreate(BaseModel):
     token: str
     purpose: str
     urgency: str = "Medium"
+    receiver_wallet: str = Field(..., alias="receiverWallet", min_length=42, max_length=42)
+    sender_wallet: Optional[str] = Field(None, alias="senderWallet")
+
+    @validator("receiver_wallet")
+    def validate_receiver_wallet(cls, v: str) -> str:
+        import re
+        v = v.strip()
+        if not re.fullmatch(r"0x[a-fA-F0-9]{40}", v):
+            raise ValueError("receiver_wallet must be a valid Ethereum address (0x + 40 hex chars)")
+        return v
 
     model_config = {"populate_by_name": True}
 
@@ -133,6 +165,8 @@ class PaymentResponse(BaseModel):
     revert_reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    compliance_decision: Optional[Dict[str, Any]] = None
+    pipeline_stages: Optional[Dict[str, Dict[str, Any]]] = None
 
     model_config = {"from_attributes": True}
 
@@ -146,6 +180,8 @@ class ComplianceDecisionResponse(BaseModel):
     id: UUID
     payment_id: UUID
     country_policy_result: Optional[dict] = None
+    treasury_controls_result: Optional[dict] = None
+    compliance_result: Optional[dict] = None
     wallet_risk_result: Optional[dict] = None
     issuer_risk_result: Optional[dict] = None
     chain_governance_result: Optional[dict] = None
@@ -233,7 +269,18 @@ class PolicyRuleResponse(BaseModel):
 
 # ── Revalidation Schemas ─────────────────────────────────────
 class RevalidationTrigger(BaseModel):
-    payment_id: Optional[str] = None
+    trigger_type: str = "sanctions"
+    corridors: Optional[List[str]] = []
+    wallets: Optional[List[str]] = []
+    token: Optional[str] = None
+    risk_level: Optional[str] = "high"
+
+    @validator("trigger_type")
+    def validate_trigger_type(cls, v):
+        valid = ["sanctions", "policy", "wallet", "issuer", "all"]
+        if v not in valid:
+            raise ValueError(f"trigger_type must be one of {valid}")
+        return v
 
 
 class RevalidationResponse(BaseModel):

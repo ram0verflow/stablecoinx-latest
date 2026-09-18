@@ -28,6 +28,7 @@ const roleStyles: Record<UserRole, string> = {
   'Compliance Officer': 'bg-amber-500/15 text-amber-400 border-amber-500/30',
   Auditor: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
   Reviewer: 'bg-violet-500/15 text-violet-400 border-violet-500/30',
+  Viewer: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
 };
 
 export const StatusBadge: React.FC<{ status: PaymentStatus }> = ({ status }) => (

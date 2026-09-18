@@ -40,7 +40,11 @@ def connect_wallet(
     return {"status": "success", "wallet_address": current_user.wallet_address}
 
 @router.get("/balance/{address}")
-def get_balance(address: str):
+def get_balance(
+    address: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """
     Return ETH balance from RPC
     """
@@ -68,3 +72,38 @@ def get_network_status():
         },
         "all_healthy": base_health and polygon_health
     }
+
+class FaucetRequest(BaseModel):
+    address: str
+    token: str = "USDC"
+    amount: float = 1000.0
+    network: str = "polygon"
+
+@router.post("/faucet")
+def run_faucet(
+    request: FaucetRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Mint mock tokens to the requester's wallet
+    """
+    try:
+        # Switch network if needed
+        if request.network.lower() == "polygon":
+            wallet_service.switch_to_polygon_amoy()
+        else:
+            wallet_service.switch_to_base_sepolia()
+            
+        tx_hash = wallet_service.mint_tokens(
+            request.address, 
+            request.amount, 
+            request.token
+        )
+        
+        return {
+            "status": "success", 
+            "tx_hash": tx_hash, 
+            "message": f"Minted {request.amount} {request.token} to {request.address} on {request.network}"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
