@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ToastProvider';
-import { 
-  Shield, User, Wallet, Bell, Database, Lock, 
+import {
+  Shield, User, Wallet, Database, Lock,
   Settings as SettingsIcon, RefreshCw, Activity,
   Globe, Cpu, Server, Key, Network, Brain
 } from 'lucide-react';
 import { aiApi, authApi, monitoringApi } from '../lib/api';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusDot } from '../components/StatusBadge';
 
 export const Settings: React.FC = () => {
   const { user, setWallet, updatePreference } = useAuthStore();
@@ -71,103 +73,104 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in pb-20">
-      <header className="mb-10">
-        <div className="flex items-center gap-2 text-brand-primary text-[10px] font-black uppercase tracking-widest mb-2">
-            <SettingsIcon className="w-3 h-3" />
-            Configuration Portal
-        </div>
-        <h1 className="text-3xl font-extrabold text-white mb-2">System Settings</h1>
-        <p className="text-slate-500 font-medium">Manage your identity, security protocols, and system orchestration parameters.</p>
-      </header>
+      <PageHeader
+        title="System Settings"
+        description="Manage your identity, security protocols, and system orchestration parameters."
+        badge={
+          <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-ink-600 bg-surface-elevated border border-surface-border rounded-full px-3 py-1">
+            <SettingsIcon className="w-3 h-3 text-brand-primary" /> Configuration Portal
+          </span>
+        }
+      />
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* User Identity Section */}
-        <div className="grid md:grid-cols-2 gap-6">
-            <div className="glass-card p-8 border-white/5 bg-white/[0.02]">
-                <h3 className="text-sm font-black uppercase tracking-widest text-white mb-8 flex items-center gap-2">
+        <div className="grid md:grid-cols-2 gap-5">
+            <div className="glass-card p-6">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-ink-900 mb-6 flex items-center gap-2">
                     <User className="w-4 h-4 text-brand-primary" />
                     User Identity
                 </h3>
-                <div className="space-y-6">
+                <div className="space-y-5">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-slate-900 border border-white/10 flex items-center justify-center text-xl font-bold text-brand-primary shadow-inner">
+                        <div className="w-12 h-12 rounded-full bg-brand-soft border border-surface-border flex items-center justify-center text-xl font-bold text-brand-primary">
                             {user?.name?.charAt(0) || 'U'}
                         </div>
                         <div>
-                            <p className="text-sm font-bold text-white">{user?.name}</p>
-                            <p className="text-xs text-slate-500">{user?.email}</p>
+                            <p className="text-sm font-bold text-ink-900">{user?.name}</p>
+                            <p className="text-xs text-ink-400">{user?.email}</p>
                         </div>
                     </div>
-                    <div className="pt-4 border-t border-white/5 space-y-4">
+                    <div className="pt-4 border-t border-surface-border space-y-3">
                         <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Access Role</span>
+                            <span className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide">Access Role</span>
                             <span className="badge badge-pending">{user?.role}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Security Status</span>
-                            <span className="text-[10px] font-black text-emerald-400 flex items-center gap-1 uppercase tracking-tighter">
-                                <Shield className="w-3 h-3" /> VERIFIED
+                            <span className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide">Security Status</span>
+                            <span className="text-[11px] font-bold text-status-pass flex items-center gap-1 uppercase">
+                                <Shield className="w-3 h-3" /> Verified
                             </span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="glass-card p-8 border-white/5 bg-white/[0.02]">
-                <h3 className="text-sm font-black uppercase tracking-widest text-white mb-8 flex items-center gap-2">
-                    <Wallet className="w-4 h-4 text-brand-secondary" />
+            <div className="glass-card p-6">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-ink-900 mb-6 flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-brand-primary" />
                     Web3 Integration
                 </h3>
                 {user?.walletAddress ? (
-                    <div className="space-y-6">
-                        <div className="p-4 rounded-xl bg-slate-950/50 border border-white/5">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Custodial Address</p>
-                            <p className="text-xs font-mono text-slate-300 break-all">{user.walletAddress}</p>
+                    <div className="space-y-5">
+                        <div className="p-4 rounded-lg bg-surface-elevated border border-surface-border">
+                            <p className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide mb-2">Custodial Address</p>
+                            <p className="text-xs font-mono text-ink-600 break-all">{user.walletAddress}</p>
                         </div>
-                        <button onClick={handleDisconnect} className="w-full btn-secondary py-3 text-xs border-rose-500/20 text-rose-400">
+                        <button onClick={handleDisconnect} className="w-full btn-secondary py-2.5 text-xs border-status-blocked/30 text-status-blocked">
                             Revoke Wallet Access
                         </button>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-40 text-center">
-                        <div className="w-12 h-12 rounded-full bg-slate-900 border border-dashed border-slate-700 flex items-center justify-center mb-4">
-                            <Wallet className="w-5 h-5 text-slate-700" />
+                        <div className="w-12 h-12 rounded-full bg-surface-elevated border border-dashed border-surface-border flex items-center justify-center mb-4">
+                            <Wallet className="w-5 h-5 text-ink-400" />
                         </div>
-                        <p className="text-xs text-slate-500 font-medium">No wallet detected.<br/>Connect via navigation bar.</p>
+                        <p className="text-xs text-ink-400 font-medium">No wallet detected.<br/>Connect via navigation bar.</p>
                     </div>
                 )}
             </div>
         </div>
 
         {/* Engine Config */}
-        <div className="glass-card p-8 border-white/5 bg-white/[0.02]">
-            <h3 className="text-sm font-black uppercase tracking-widest text-white mb-8 flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-violet-400" />
+        <div className="glass-card p-6">
+            <h3 className="text-sm font-bold uppercase tracking-wide text-ink-900 mb-6 flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-brand-primary" />
                 Pipeline Orchestration
             </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block ml-1">AI Decision Engine Model</label>
+            <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                    <label className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide block ml-1">AI Decision Engine Model</label>
                     <select
                         value={aiEngine}
                         onChange={(e) => setAiEngine(e.target.value)}
-                        className="select-field bg-slate-900/50"
+                        className="select-field"
                     >
-                        <option value="ollama" className="bg-slate-900">{`Ollama (${aiModels.ollama}) - Local High-Privacy`}</option>
-                        <option value="groq" className="bg-slate-900">{`Groq (${aiModels.groq}) - Cloud Low-Latency`}</option>
+                        <option value="ollama">{`Ollama (${aiModels.ollama}) - Local High-Privacy`}</option>
+                        <option value="groq">{`Groq (${aiModels.groq}) - Cloud Low-Latency`}</option>
                     </select>
-                    <p className="text-[10px] text-slate-500 italic ml-1">Local inference is recommended for PII-sensitive compliance processing.</p>
+                    <p className="text-[11px] text-ink-400 italic ml-1">Local inference is recommended for PII-sensitive compliance processing.</p>
                 </div>
-                <div className="space-y-4">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block ml-1">Notifications Protocol</label>
-                    <div className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-slate-950/50">
+                <div className="space-y-3">
+                    <label className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide block ml-1">Notifications Protocol</label>
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-surface-border bg-surface-elevated">
                         <div>
-                            <p className="text-xs font-bold text-slate-300">Telegram Infrastructure Alerting</p>
-                            <p className="text-[10px] text-slate-500">Real-time settlement lifecycle updates</p>
+                            <p className="text-xs font-semibold text-ink-900">Telegram Infrastructure Alerting</p>
+                            <p className="text-[11px] text-ink-400">Real-time settlement lifecycle updates</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" className="sr-only peer" checked={telegramAlerts} onChange={(e) => setTelegramAlerts(e.target.checked)} />
-                            <div className="w-10 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-primary peer-checked:after:bg-white"></div>
+                            <div className="w-10 h-5 bg-surface-border rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow peer-checked:bg-brand-primary"></div>
                         </label>
                     </div>
                 </div>
@@ -175,13 +178,13 @@ export const Settings: React.FC = () => {
         </div>
 
         {/* System Health */}
-        <div className="glass-card p-8 border-white/5 bg-white/[0.02]">
-            <div className="flex items-center justify-between mb-8">
-                <h3 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-emerald-400" />
+        <div className="glass-card p-6">
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-ink-900 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-brand-primary" />
                     Infrastructure Health
                 </h3>
-                <button onClick={refreshHealth} disabled={refreshing} className="p-2 hover:bg-white/5 rounded-full text-slate-500 transition-colors">
+                <button onClick={refreshHealth} disabled={refreshing} className="p-2 hover:bg-surface-elevated rounded-full text-ink-400 transition-colors">
                     <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 </button>
             </div>
@@ -196,19 +199,21 @@ export const Settings: React.FC = () => {
                     const up = serviceHealth[s.key as keyof typeof serviceHealth];
                     const Icon = s.icon;
                     return (
-                        <div key={s.key} className="p-4 rounded-2xl border border-white/5 bg-slate-950/50 text-center group hover:border-white/10 transition-colors">
-                            <div className={`w-2 h-2 rounded-full mx-auto mb-3 ${up ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'}`} />
-                            <Icon className="w-5 h-5 mx-auto mb-2 text-slate-600 group-hover:text-slate-400 transition-colors" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{s.label}</p>
-                            <p className={`text-[10px] font-bold ${up ? 'text-emerald-400' : 'text-rose-400'}`}>{up ? 'ONLINE' : 'OFFLINE'}</p>
+                        <div key={s.key} className="p-4 rounded-lg border border-surface-border bg-surface-elevated text-center group hover:border-brand-primary/30 transition-colors">
+                            <div className="flex justify-center mb-2">
+                              <StatusDot tone={up ? 'pass' : 'blocked'} />
+                            </div>
+                            <Icon className="w-5 h-5 mx-auto mb-2 text-ink-400 group-hover:text-ink-600 transition-colors" />
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-ink-600 mb-1">{s.label}</p>
+                            <p className={`text-[11px] font-bold ${up ? 'text-status-pass' : 'text-status-blocked'}`}>{up ? 'Online' : 'Offline'}</p>
                         </div>
                     );
                 })}
             </div>
         </div>
 
-        <div className="flex justify-end pt-4 gap-4">
-            <button onClick={handleSave} className="btn-primary py-4 px-10 text-xs flex items-center gap-2 shadow-brand-primary/10">
+        <div className="flex justify-end pt-2 gap-4">
+            <button onClick={handleSave} className="btn-primary py-3 px-8 text-xs flex items-center gap-2">
                 <Key className="w-4 h-4" /> Commit Protocol Changes
             </button>
         </div>

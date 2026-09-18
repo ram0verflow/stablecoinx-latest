@@ -6,26 +6,37 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          primary: '#3b82f6',    // blue-500
-          secondary: '#8b5cf6',  // violet-500
-          accent: '#06b6d4',     // cyan-500
+          primary: '#2563eb',   // blue-600 — single accent
+          hover: '#1d4ed8',     // blue-700
+          soft: '#eff6ff',      // blue-50
+        },
+        navy: {
+          950: '#0b1220',
+          900: '#101a2e',
+          800: '#16233d',
+          700: '#1e2d4d',
+          600: '#2a3c5e',
+          400: '#5b6b8c',
+          200: '#aab4c9',
         },
         surface: {
-          base: '#0a0a0f',       // page background
-          card: '#0f1117',       // card background
-          elevated: '#151821',   // elevated elements
-          border: '#1e2433',     // borders
+          base: '#f4f6f9',      // page background
+          card: '#ffffff',      // card background
+          elevated: '#f8fafc',  // inputs / elevated elements
+          border: '#e2e6ee',    // borders
+        },
+        ink: {
+          900: '#0f172a',       // primary text (charcoal/navy)
+          600: '#475569',       // secondary text
+          400: '#94a3b8',       // muted text
         },
         status: {
-          pass: '#22c55e',       // green
-          fail: '#ef4444',       // red
-          pending: '#3b82f6',    // blue
-          veto: '#f59e0b',       // amber
-          review: '#f97316',     // orange
+          pass: '#16a34a',      // green-600
+          review: '#d97706',    // amber-600
+          blocked: '#dc2626',   // red-600
+          processing: '#2563eb',// blue-600
+          unknown: '#64748b',   // slate-500
         }
-      },
-      animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },

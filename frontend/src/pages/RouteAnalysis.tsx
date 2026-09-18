@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { paymentApi } from '../lib/api';
+import { getStatusTone, type Tone } from '../components/StatusBadge';
 
 interface PipelineStage {
   label: string;
@@ -41,30 +42,25 @@ const LAYER_CONFIG = [
 
 const TERMINAL_STATUSES = ['approved', 'blocked', 'executed', 'under_review', 'failed', 'rejected'];
 
+const toneTextClass: Record<Tone, string> = {
+  pass: 'text-status-pass',
+  review: 'text-status-review',
+  blocked: 'text-status-blocked',
+  processing: 'text-status-processing',
+  unknown: 'text-status-unknown',
+};
+
 function getLayerStatusDisplay(stage: PipelineStage | undefined, isLoading: boolean, isPaymentComplete: boolean) {
-  if (isLoading) {
-    return { label: 'PROCESSING', color: 'text-blue-400', icon: <Loader2 className="w-3 h-3 inline animate-spin" />, spinning: false };
+  if (isLoading || !stage) {
+    if (!stage && isPaymentComplete) {
+      return { label: 'PASS', color: toneTextClass.pass, icon: '✓' };
+    }
+    return { label: 'PROCESSING', color: toneTextClass.processing, icon: <Loader2 className="w-3 h-3 inline animate-spin" /> };
   }
-  if (!stage && isPaymentComplete) {
-    return { label: 'PASS', color: 'text-green-400', icon: '✓', spinning: false };
-  }
-  if (!stage) {
-    return { label: 'PROCESSING', color: 'text-blue-400', icon: <Loader2 className="w-3 h-3 inline animate-spin" />, spinning: false };
-  }
-  switch (stage.status) {
-    case 'pass':
-      return { label: 'PASS', color: 'text-green-400', icon: '✓', spinning: false };
-    case 'fail':
-    case 'blocked':
-      return { label: 'FAIL', color: 'text-red-400', icon: '✗', spinning: false };
-    case 'partial':
-    case 'review':
-      return { label: 'REVIEW', color: 'text-yellow-400', icon: '⚠', spinning: false };
-    case 'pending':
-      return { label: 'PENDING', color: 'text-gray-400', icon: '○', spinning: false };
-    default:
-      return { label: 'PROCESSING', color: 'text-blue-400', icon: <Loader2 className="w-3 h-3 inline animate-spin" />, spinning: false };
-  }
+  const tone = getStatusTone(stage.status);
+  const iconMap: Record<Tone, string> = { pass: '✓', blocked: '✗', review: '⚠', processing: '○', unknown: '○' };
+  const labelMap: Record<Tone, string> = { pass: 'PASS', blocked: 'FAIL', review: 'REVIEW', processing: 'PENDING', unknown: 'UNKNOWN' };
+  return { label: labelMap[tone], color: toneTextClass[tone], icon: iconMap[tone] };
 }
 
 export const RouteAnalysis: React.FC = () => {
@@ -88,7 +84,7 @@ export const RouteAnalysis: React.FC = () => {
         const { data } = await paymentApi.getById(paymentId);
         setPayment(data as PaymentDetails);
 
-        const hasRealStages = (data as any).pipeline_stages && 
+        const hasRealStages = (data as any).pipeline_stages &&
                             Object.keys((data as any).pipeline_stages).some(k => k.startsWith('layer_'));
 
         if (
@@ -148,83 +144,83 @@ export const RouteAnalysis: React.FC = () => {
   const showVeto = finalDecision === 'blocked';
 
   return (
-    <div className="space-y-8 animate-fade-in pb-20">
+    <div className="space-y-6 animate-fade-in pb-20">
       <header className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white">Route Analysis</h1>
-          <p className="text-slate-500 font-medium">Payment ID: <span className="font-mono text-brand-primary">{paymentId}</span></p>
+          <h1 className="text-2xl font-bold text-ink-900">Route Analysis</h1>
+          <p className="text-ink-600 font-medium">Payment ID: <span className="font-mono text-brand-primary">{paymentId}</span></p>
         </div>
-        <button onClick={() => navigate('/dashboard')} className="btn-secondary py-3 text-xs">Return Home</button>
+        <button onClick={() => navigate('/dashboard')} className="btn-secondary py-2.5 text-xs">Return Home</button>
       </header>
 
       {isPolling && (
-        <div className="flex flex-col items-center gap-2">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500" />
-          <p className="text-gray-400">Polling compliance pipeline...</p>
-          <p className="text-gray-600 text-sm">Attempt {pollCount}/40 · Checking every 2s</p>
+        <div className="flex flex-col items-center gap-2 py-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-primary" />
+          <p className="text-ink-600">Polling compliance pipeline...</p>
+          <p className="text-ink-400 text-sm">Attempt {pollCount}/40 · Checking every 2s</p>
         </div>
       )}
 
       {!isPolling && !isPaymentComplete && (
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-yellow-400">Pipeline still processing</p>
-          <p className="text-gray-400 text-sm">
+        <div className="flex flex-col items-center gap-4 py-4">
+          <p className="text-status-review font-semibold">Pipeline still processing</p>
+          <p className="text-ink-600 text-sm">
             {error || 'The pipeline may still be running in the background. Refresh to check latest status.'}
           </p>
-          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-600 rounded text-white">
+          <button onClick={() => window.location.reload()} className="btn-primary py-2 px-4 text-sm">
             Refresh Status
           </button>
         </div>
       )}
 
-      <div className="grid lg:grid-cols-12 gap-8">
+      <div className="grid lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 space-y-3">
           {LAYER_CONFIG.map(({ key, number, icon }) => {
             const stage = payment?.pipeline_stages?.[key];
             const loading = isLayerLoading(key);
             const statusDisplay = getLayerStatusDisplay(stage, loading, isPaymentComplete);
             return (
-              <div key={key} className={`glass-card p-4 border ${stage?.status === 'fail' || stage?.status === 'blocked' ? 'border-red-500/30' : 'border-white/5'}`}>
+              <div key={key} className={`glass-card p-4 ${stage?.status === 'fail' || stage?.status === 'blocked' ? 'border-status-blocked/40' : ''}`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-slate-200">
+                  <span className="text-sm font-semibold text-ink-900">
                     {icon} Layer {number}: {stage?.label || key}
                   </span>
                   <span className={`${statusDisplay.color} text-xs font-bold flex items-center gap-1`}>
                     {statusDisplay.icon} {statusDisplay.label}
                   </span>
                 </div>
-                {stage?.detail && <div className="text-gray-400 text-sm mt-1">{stage.detail}</div>}
+                {stage?.detail && <div className="text-ink-600 text-sm mt-1">{stage.detail}</div>}
               </div>
             );
           })}
         </div>
 
-        <div className="lg:col-span-4 space-y-6">
-          <div className="glass-card p-6 border-white/5">
-            <h3 className="text-green-400 text-sm font-black mb-3">PASS FACTORS</h3>
-            {passFactors.length === 0 && <p className="text-gray-500 text-sm">Processing...</p>}
+        <div className="lg:col-span-4 space-y-5">
+          <div className="glass-card p-5">
+            <h3 className="text-status-pass text-sm font-bold mb-3">PASS FACTORS</h3>
+            {passFactors.length === 0 && <p className="text-ink-400 text-sm">Processing...</p>}
             {passFactors.map((f) => (
-              <div key={f} className="text-green-300 text-sm">✓ {f}</div>
+              <div key={f} className="text-ink-600 text-sm">✓ {f}</div>
             ))}
           </div>
 
-          <div className="glass-card p-6 border-white/5">
-            <h3 className="text-red-400 text-sm font-black mb-3">RISK FACTORS</h3>
+          <div className="glass-card p-5">
+            <h3 className="text-status-blocked text-sm font-bold mb-3">RISK FACTORS</h3>
             {riskFactors.length === 0 && isPaymentComplete && (
-              <p className="text-gray-500 text-sm">No risk factors detected</p>
+              <p className="text-ink-400 text-sm">No risk factors detected</p>
             )}
             {riskFactors.map((f) => (
-              <div key={f.label} className="text-red-300 text-sm mb-2">
+              <div key={f.label} className="text-ink-600 text-sm mb-2">
                 ✗ {f.label}
-                <p className="text-gray-400 text-xs">{f.detail}</p>
+                <p className="text-ink-400 text-xs">{f.detail}</p>
               </div>
             ))}
           </div>
 
           {showVeto && (
-            <div className="glass-card p-6 border-rose-500/30 bg-rose-500/5">
-              <h3 className="font-bold text-sm uppercase tracking-widest text-rose-400 mb-2">Pipeline Veto</h3>
-              <p className="text-xs text-slate-300">Final decision is blocked by policy veto.</p>
+            <div className="glass-card p-5 border-status-blocked/30 bg-status-blocked/5">
+              <h3 className="font-bold text-sm uppercase tracking-wide text-status-blocked mb-2">Pipeline Veto</h3>
+              <p className="text-xs text-ink-600">Final decision is blocked by policy veto.</p>
             </div>
           )}
         </div>

@@ -53,16 +53,16 @@ export const WalletConnect: React.FC = () => {
         {/* Wrong network alert */}
         {!isCorrectNetwork && (
           <div className="flex items-center gap-1.5">
-            <span className="text-rose-400 text-[10px] font-black uppercase tracking-tighter mr-1">Wrong Network</span>
+            <span className="text-status-blocked text-[10px] font-bold uppercase tracking-wide mr-1">Wrong Network</span>
             <button
               onClick={switchToBaseSepolia}
-              className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded text-[10px] font-bold transition-all border border-indigo-500/20"
+              className="bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary px-2 py-1 rounded text-[10px] font-bold transition-all border border-brand-primary/20"
             >
               Switch Base
             </button>
             <button
               onClick={switchToPolygonAmoy}
-              className="bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 px-2 py-1 rounded text-[10px] font-bold transition-all border border-purple-500/20"
+              className="bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary px-2 py-1 rounded text-[10px] font-bold transition-all border border-brand-primary/20"
             >
               Switch Polygon
             </button>
@@ -71,22 +71,22 @@ export const WalletConnect: React.FC = () => {
 
         {/* Network Badge */}
         {isCorrectNetwork && (
-          <div className="bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-md text-[10px] font-medium border border-indigo-500/30">
+          <div className="bg-brand-primary/10 text-brand-primary px-2.5 py-1 rounded-md text-[10px] font-medium border border-brand-primary/20">
             {networkName}
           </div>
         )}
 
         {/* Balance & Address */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/60 border border-slate-700/50 rounded-lg">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs text-slate-300">{balance}</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-xs font-mono text-slate-300">{truncateAddress(address as string)}</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-elevated border border-surface-border rounded-lg">
+          <div className="w-2 h-2 rounded-full bg-status-pass" />
+          <span className="text-xs text-ink-600">{balance}</span>
+          <span className="text-ink-400">|</span>
+          <span className="text-xs font-mono text-ink-600">{truncateAddress(address as string)}</span>
         </div>
 
         <button
           onClick={() => { disconnect(); savedRef.current = null; }}
-          className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 rounded-lg transition-colors"
+          className="p-1.5 text-ink-400 hover:text-status-blocked hover:bg-surface-elevated rounded-lg transition-colors"
           title="Disconnect Wallet"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

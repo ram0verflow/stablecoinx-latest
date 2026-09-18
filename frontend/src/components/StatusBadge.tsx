@@ -1,75 +1,86 @@
 import React from 'react';
 import type { PaymentStatus, AlertType, UserRole } from '../types';
 
-const statusStyles: Record<PaymentStatus, string> = {
-  pending: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  under_review: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-  approved: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-  blocked: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-  executed: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
-  failed: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-  review: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-  revalidation: 'bg-violet-500/15 text-violet-400 border-violet-500/30',
+/**
+ * Single source of truth for status/role color mapping across the app.
+ * Tone = green (pass) / amber (review) / red (blocked) / blue (processing) / gray (unknown).
+ * Always pair color with an icon/label elsewhere — never rely on color alone.
+ */
+export type Tone = 'pass' | 'review' | 'blocked' | 'processing' | 'unknown';
+
+const toneClasses: Record<Tone, string> = {
+  pass: 'bg-status-pass/10 text-status-pass border-status-pass/20',
+  review: 'bg-status-review/10 text-status-review border-status-review/20',
+  blocked: 'bg-status-blocked/10 text-status-blocked border-status-blocked/20',
+  processing: 'bg-status-processing/10 text-status-processing border-status-processing/20',
+  unknown: 'bg-status-unknown/10 text-status-unknown border-status-unknown/20',
 };
 
-const alertStyles: Record<AlertType, string> = {
-  approved: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-  blocked: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-  review: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  revalidation: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
-  review_needed: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  settlement_executed: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
-  settlement_failed: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+const toneDotClasses: Record<Tone, string> = {
+  pass: 'bg-status-pass',
+  review: 'bg-status-review',
+  blocked: 'bg-status-blocked',
+  processing: 'bg-status-processing',
+  unknown: 'bg-status-unknown',
 };
 
-const roleStyles: Record<UserRole, string> = {
-  Admin: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
-  'Treasury Officer': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-  'Compliance Officer': 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  Auditor: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
-  Reviewer: 'bg-violet-500/15 text-violet-400 border-violet-500/30',
-  Viewer: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
+export function getStatusTone(status: string): Tone {
+  const s = status.toLowerCase();
+  if (['approved', 'executed', 'pass', 'clear', 'verified', 'online', 'completed', 'active'].includes(s)) return 'pass';
+  if (['blocked', 'failed', 'fail', 'rejected', 'offline', 'sanctioned'].includes(s)) return 'blocked';
+  if (['under_review', 'review', 'pending_review', 'revalidation', 'manual_review', 'flagged', 'degraded'].includes(s)) return 'review';
+  if (['pending', 'processing', 'executing', 'in_progress'].includes(s)) return 'processing';
+  return 'unknown';
+}
+
+const roleTone: Record<UserRole, string> = {
+  Admin: 'bg-navy-700/10 text-navy-700 border-navy-700/20',
+  'Treasury Officer': 'bg-status-pass/10 text-status-pass border-status-pass/20',
+  'Compliance Officer': 'bg-status-review/10 text-status-review border-status-review/20',
+  Auditor: 'bg-status-processing/10 text-status-processing border-status-processing/20',
+  Reviewer: 'bg-brand-primary/10 text-brand-primary border-brand-primary/20',
+  Viewer: 'bg-status-unknown/10 text-status-unknown border-status-unknown/20',
 };
+
+export function formatRoleLabel(role: string): UserRole {
+  return role
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ') as UserRole;
+}
+
+export function getRoleTone(role: string): string {
+  return roleTone[formatRoleLabel(role)] || 'bg-status-unknown/10 text-status-unknown border-status-unknown/20';
+}
+
+export const Tag: React.FC<{ tone: Tone; children: React.ReactNode; className?: string }> = ({ tone, children, className = '' }) => (
+  <span className={`badge ${toneClasses[tone]} ${className}`}>{children}</span>
+);
+
+/** Flat status dot — replaces the old glow-shadow "live" indicator pattern. */
+export const StatusDot: React.FC<{ tone: Tone; className?: string }> = ({ tone, className = '' }) => (
+  <span className={`inline-block h-2 w-2 rounded-full ${toneDotClasses[tone]} ${className}`} />
+);
 
 export const StatusBadge: React.FC<{ status: PaymentStatus }> = ({ status }) => (
-  <span className={`badge border ${statusStyles[status]}`}>
-    {status.charAt(0).toUpperCase() + status.slice(1)}
-  </span>
+  <Tag tone={getStatusTone(status)}>{status.replace(/_/g, ' ')}</Tag>
 );
 
 export const AlertBadge: React.FC<{ type: AlertType }> = ({ type }) => (
-  <span className={`badge border ${alertStyles[type]}`}>
-    {type.charAt(0).toUpperCase() + type.slice(1)}
-  </span>
+  <Tag tone={getStatusTone(type)}>{type.replace(/_/g, ' ')}</Tag>
 );
 
 export const RoleBadge: React.FC<{ role: string }> = ({ role }) => {
-  const formattedRole = role
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ') as UserRole;
-  
-  const style = roleStyles[formattedRole] || 'bg-slate-500/15 text-slate-400 border-slate-500/30';
-  
-  return <span className={`badge border ${style}`}>{formattedRole}</span>;
+  const formattedRole = formatRoleLabel(role);
+  return <span className={`badge border ${getRoleTone(role)}`}>{formattedRole}</span>;
 };
 
 export const RiskBadge: React.FC<{ score: number }> = ({ score }) => {
-  const style =
-    score >= 70
-      ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-      : score >= 40
-        ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-        : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-  return <span className={`badge border ${style}`}>{score}</span>;
+  const tone: Tone = score >= 70 ? 'blocked' : score >= 40 ? 'review' : 'pass';
+  return <Tag tone={tone}>{score}</Tag>;
 };
 
 export const DecisionBadge: React.FC<{ status: 'PASS' | 'FAIL' | 'WARNING' }> = ({ status }) => {
-  const s =
-    status === 'PASS'
-      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-      : status === 'FAIL'
-        ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-        : 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-  return <span className={`badge border ${s}`}>{status}</span>;
+  const tone: Tone = status === 'PASS' ? 'pass' : status === 'FAIL' ? 'blocked' : 'review';
+  return <Tag tone={tone}>{status}</Tag>;
 };

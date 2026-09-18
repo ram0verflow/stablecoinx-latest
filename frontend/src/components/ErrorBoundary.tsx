@@ -26,20 +26,20 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#0a0a0f] flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
-            <span className="text-red-500 text-2xl font-bold">!</span>
+        <div className="min-h-screen bg-surface-base flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-16 h-16 bg-status-blocked/10 rounded-full flex items-center justify-center mb-6">
+            <span className="text-status-blocked text-2xl font-bold">!</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Something went wrong</h1>
-          <p className="text-slate-400 max-w-md mb-6">
+          <h1 className="text-2xl font-bold text-ink-900 mb-2">Something went wrong</h1>
+          <p className="text-ink-600 max-w-md mb-6">
             The application crashed while rendering this page. This is usually caused by a missing configuration or connection error.
           </p>
-          <pre className="bg-slate-900 p-4 rounded-lg text-red-400 text-xs text-left max-w-xl overflow-auto mb-6">
+          <pre className="bg-surface-elevated border border-surface-border p-4 rounded-lg text-status-blocked text-xs text-left max-w-xl overflow-auto mb-6">
             {this.state.error?.toString()}
           </pre>
-          <button 
+          <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-all"
+            className="btn-primary"
           >
             Reload Application
           </button>
