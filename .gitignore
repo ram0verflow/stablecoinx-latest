@@ -1,0 +1,19 @@
+# Environment
+.env
+
+# Node
+node_modules
+
+# Python
+__pycache__
+.pytest_cache
+
+# Foundry
+out/
+cache/
+
+# Build
+dist/
+
+# OS
+.DS_Store
