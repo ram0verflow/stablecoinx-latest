@@ -22,10 +22,18 @@ def _startup_seed_and_graph() -> None:
 
     log = logging.getLogger(__name__)
     try:
+        from app.db.database import Base, engine as db_engine
+
+        if settings.DATABASE_URL.startswith("sqlite"):
+            Base.metadata.create_all(bind=db_engine)
+            log.info("SQLite schema created (create_all)")
+    except Exception as exc:
+        log.warning("SQLite schema create skipped: %s", exc)
+    try:
         seed_neo4j()
     except Exception as exc:
         log.warning("Neo4j startup seed skipped: %s", exc)
-    if os.environ.get("APP_ENV", "") not in ("demo", "development"):
+    if settings.APP_ENV not in ("demo", "development"):
         return
     try:
         from app.db.seed import seed_db

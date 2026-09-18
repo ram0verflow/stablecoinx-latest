@@ -1,6 +1,39 @@
 """
 Pytest configuration and fixtures for SettleGuard tests.
+Environment is set before any `app.*` import so Settings() can construct.
 """
+
+import os
+
+_TEST_ENV = {
+    "APP_ENV": "development",
+    "DATABASE_URL": "sqlite:///:memory:",
+    "JWT_SECRET_KEY": "pytest-local-secret-key-32chars-min",
+    "SUPABASE_URL": "https://placeholder.supabase.co",
+    "SUPABASE_ANON_KEY": "pytest-anon-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "pytest-service-role-key",
+    "BASE_SEPOLIA_RPC_URL": "https://sepolia.base.org",
+    "BACKEND_WALLET_PRIVATE_KEY": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "OLLAMA_BASE_URL": "http://127.0.0.1:11434",
+    "OLLAMA_MODEL": "gemma:2b",
+    "GROQ_API_KEY": "not-configured",
+    "GROQ_MODEL": "llama3-8b-8192",
+    "BASE_SEPOLIA_CHAIN_ID": "84532",
+    "CONTRACT_ABI_PATH": "contracts/out",
+    "REDIS_URL": "redis://localhost:6379",
+    "NEO4J_URI": "bolt://localhost:7687",
+    "NEO4J_USERNAME": "neo4j",
+    "NEO4J_PASSWORD": "pytest",
+    "TELEGRAM_BOT_TOKEN": "disabled",
+    "TELEGRAM_CHAT_ID": "0",
+    "CONTRACT_ADDRESS_SETTLEMENT": "0x0000000000000000000000000000000000000001",
+    "CONTRACT_ADDRESS_COMPLIANCE": "0x0000000000000000000000000000000000000002",
+    "CONTRACT_ADDRESS_TREASURY": "0x0000000000000000000000000000000000000003",
+    "CONTRACT_ADDRESS_REGISTRY": "0x0000000000000000000000000000000000000004",
+    "CORS_ORIGINS": "http://localhost:5173",
+}
+for _k, _v in _TEST_ENV.items():
+    os.environ.setdefault(_k, _v)
 
 import pytest
 from sqlalchemy import create_engine
@@ -8,12 +41,10 @@ from sqlalchemy.orm import sessionmaker, Session
 from uuid import uuid4
 
 from app.db.database import Base
-from app.models.users import User
-from app.schemas import UserRoleEnum
+from app.models.users import User, UserRole
 from app.core.security import get_password_hash
 
 
-# Use in-memory SQLite for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
@@ -41,7 +72,7 @@ def test_user(db_session: Session) -> User:
         email="test@example.com",
         hashed_password=get_password_hash("testpass123"),
         full_name="Test User",
-        role=UserRoleEnum.admin,
+        role=UserRole.admin,
         is_active=True,
     )
     db_session.add(user)
@@ -57,7 +88,7 @@ def test_treasury_officer(db_session: Session) -> User:
         email="treasury@example.com",
         hashed_password=get_password_hash("testpass123"),
         full_name="Treasury Officer",
-        role=UserRoleEnum.treasury_officer,
+        role=UserRole.treasury_officer,
         is_active=True,
     )
     db_session.add(user)
@@ -73,7 +104,7 @@ def test_compliance_officer(db_session: Session) -> User:
         email="compliance@example.com",
         hashed_password=get_password_hash("testpass123"),
         full_name="Compliance Officer",
-        role=UserRoleEnum.compliance_officer,
+        role=UserRole.compliance_officer,
         is_active=True,
     )
     db_session.add(user)

@@ -239,7 +239,9 @@ def _seed_issuer_profiles(db) -> None:
 
 
 def seed_db():
-    if os.environ.get("APP_ENV", "") not in ("demo", "development"):
+    from app.core.config import settings
+
+    if settings.APP_ENV not in ("demo", "development"):
         raise RuntimeError("Seed script only runs when APP_ENV is demo or development")
     db = SessionLocal()
     try:
