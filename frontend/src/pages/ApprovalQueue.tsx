@@ -1,30 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Filter,
-  X, Search, List,
-  ShieldCheck, AlertTriangle, ChevronRight
-} from 'lucide-react';
 import { usePaymentStore } from '../store/paymentStore';
 import { useAuthStore } from '../store/authStore';
 import { paymentApi } from '../lib/api';
 import { useToast } from '../components/ToastProvider';
 import type { Payment } from '../types';
-import { PageHeader } from '../components/ui/PageHeader';
-import { EmptyState } from '../components/ui/EmptyState';
-import { StatusDot } from '../components/StatusBadge';
+import { IcChevronLeft, IcArrowRight, IcLock } from '../components/scx/icons';
+
+const HIGH_VALUE_THRESHOLD = 100_000;
+const ELEVATED_RISK_THRESHOLD = 60;
+
+function reasonFor(p: Payment): string {
+  if (p.status === 'blocked') return 'Policy veto — compliance block';
+  if (p.amount > HIGH_VALUE_THRESHOLD) return `Dual approval — amount >$${(HIGH_VALUE_THRESHOLD / 1000).toFixed(0)}k`;
+  if (p.riskScore >= ELEVATED_RISK_THRESHOLD) return 'Elevated risk score';
+  return 'Manual review required';
+}
+
+const riskTone = (score: number) => (score >= 70 ? { color: 'var(--red)', label: 'High' } : score >= 40 ? { color: 'var(--amber)', label: 'Medium' } : { color: 'var(--green)', label: 'Low' });
 
 export const ApprovalQueue: React.FC = () => {
   const { payments, updateStatus, setPayments } = usePaymentStore();
-  const { canApprove, user } = useAuthStore();
+  const { canApprove } = useAuthStore();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [corridorFilter, setCorridorFilter] = useState<string>('all');
-  const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState('queue');
+  const [selected, setSelected] = useState<Payment | null>(null);
+  const [acting, setActing] = useState(false);
 
   useEffect(() => {
     const fetchPending = async () => {
@@ -61,212 +64,133 @@ export const ApprovalQueue: React.FC = () => {
     return () => clearInterval(timer);
   }, [setPayments]);
 
-  const filteredPayments = payments.filter((p) => {
-    const statusMatch = statusFilter === 'all' || p.status === statusFilter;
-    const corridorMatch = corridorFilter === 'all' || p.corridor === corridorFilter;
-    const urgencyMatch = urgencyFilter === 'all' || p.urgency === urgencyFilter;
-    return statusMatch && corridorMatch && urgencyMatch;
-  });
+  const queue = useMemo(() => payments.filter((p) => ['pending', 'under_review', 'review'].includes(p.status)), [payments]);
+  const completed = useMemo(() => payments.filter((p) => ['approved', 'blocked', 'executed', 'rejected'].includes(p.status)), [payments]);
+  const highValue = useMemo(() => queue.filter((p) => p.amount > HIGH_VALUE_THRESHOLD), [queue]);
+  const elevatedRisk = useMemo(() => queue.filter((p) => p.riskScore >= ELEVATED_RISK_THRESHOLD), [queue]);
 
-  const corridors = [...new Set(payments.map((p) => p.corridor))];
-
-  const handleAction = async (id: string, action: 'approve' | 'reject' | 'escalate') => {
-    try {
-      if (action === 'approve') await paymentApi.approve(id);
-      else if (action === 'reject') await paymentApi.reject(id);
-      else await paymentApi.escalate(id);
-
-      const statusMap = { approve: 'approved' as const, reject: 'blocked' as const, escalate: 'under_review' as const };
-      updateStatus(id, statusMap[action]);
-
-      if (selectedPayment?.id === id) {
-          setSelectedPayment(prev => prev ? { ...prev, status: statusMap[action] } : null);
-      }
-
-      const labels = { approve: 'Approved', reject: 'Rejected', escalate: 'Escalated' };
-      showToast(action === 'reject' ? 'error' : 'success', `Payment ${labels[action]}`, `${id} has been ${labels[action].toLowerCase()}`);
-    } catch {
-        showToast('error', 'Action Failed', 'Could not update status');
-    }
-  };
+  const visible = tab === 'high' ? highValue : tab === 'risk' ? elevatedRisk : tab === 'done' ? completed : queue;
 
   const timeSince = (ts: string) => {
     const mins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
-    if (mins < 60) return `${mins}m ago`;
-    if (mins < 1440) return `${Math.floor(mins / 60)}h ago`;
-    return `${Math.floor(mins / 1440)}d ago`;
+    if (mins < 60) return `${mins}m`;
+    if (mins < 1440) return `${Math.floor(mins / 60)}h`;
+    return `${Math.floor(mins / 1440)}d`;
+  };
+
+  const handleAction = async (id: string, action: 'approve' | 'reject') => {
+    setActing(true);
+    try {
+      if (action === 'approve') await paymentApi.approve(id);
+      else await paymentApi.reject(id);
+      const status = action === 'approve' ? 'approved' : 'blocked';
+      updateStatus(id, status as any);
+      if (selected?.id === id) setSelected((prev) => (prev ? { ...prev, status: status as any } : null));
+      showToast(action === 'approve' ? 'success' : 'error', `Payment ${action === 'approve' ? 'approved' : 'rejected'}`, id);
+    } catch {
+      showToast('error', 'Action failed', 'Could not update this payment');
+    } finally {
+      setActing(false);
+    }
   };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-20">
-      <PageHeader
-        title="Approval Queue"
-        description={<>Monitoring <span className="text-brand-primary font-semibold">{filteredPayments.length}</span> active transactions across all corridors.</>}
-        badge={
-          <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-ink-600 bg-surface-elevated border border-surface-border rounded-full px-3 py-1">
-            <List className="w-3 h-3 text-brand-primary" /> Settlement Operations
-          </span>
-        }
-        actions={
-          <div className="flex items-center gap-2 text-xs font-semibold text-ink-600 bg-surface-elevated border border-surface-border rounded-lg px-3 py-1.5">
-            <StatusDot tone="pass" />
-            Queue live
-          </div>
-        }
-      />
-
-      {/* Filter Bar */}
-      <div className="glass-card p-4 flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2 text-ink-400 mr-2">
-            <Filter className="w-4 h-4" />
-            <span className="text-[11px] font-bold uppercase tracking-wide">Filter by</span>
-        </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="select-field !py-2 !px-4 !w-auto text-xs">
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="under_review">Under Review</option>
-            <option value="approved">Approved</option>
-            <option value="blocked">Blocked</option>
-        </select>
-        <select value={corridorFilter} onChange={(e) => setCorridorFilter(e.target.value)} className="select-field !py-2 !px-4 !w-auto text-xs">
-            <option value="all">All Corridors</option>
-            {corridors.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={urgencyFilter} onChange={(e) => setUrgencyFilter(e.target.value)} className="select-field !py-2 !px-4 !w-auto text-xs">
-            <option value="all">All Urgencies</option>
-            {['Low', 'Medium', 'High', 'Critical'].map((u) => <option key={u} value={u}>{u}</option>)}
-        </select>
+    <>
+      <div className="topbar">
+        <h1>Approvals</h1>
+        <p>Financial controls queue — payments awaiting dual authorization.</p>
+      </div>
+      <div className="tabs">
+        {[
+          ['queue', 'Awaiting Review', queue.length],
+          ['high', 'High Value', highValue.length],
+          ['risk', 'Elevated Risk', elevatedRisk.length],
+          ['done', 'Completed', completed.length],
+        ].map(([id, label, count]) => (
+          <button key={id as string} className={`tab${tab === id ? ' on' : ''}`} onClick={() => { setTab(id as string); setSelected(null); }}>
+            {label}<span className="c">{count}</span>
+          </button>
+        ))}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Table Main View */}
-        <div className={`glass-card overflow-hidden transition-all duration-300 ${selectedPayment ? 'lg:w-2/3' : 'w-full'}`}>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="text-left text-[11px] font-bold uppercase tracking-wide text-ink-400 border-b border-surface-border bg-surface-elevated">
-                            <th className="px-6 py-3">Transaction</th>
-                            <th className="px-6 py-3">Counterparty</th>
-                            <th className="px-6 py-3">Value</th>
-                            <th className="px-6 py-3">Risk</th>
-                            <th className="px-6 py-3">Status</th>
-                            <th className="px-6 py-3 text-right">Age</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredPayments.map((p) => (
-                            <tr
-                                key={p.id}
-                                className={`table-row group cursor-pointer ${selectedPayment?.id === p.id ? 'bg-brand-soft' : ''}`}
-                                onClick={() => setSelectedPayment(p)}
-                            >
-                                <td className="px-6 py-4">
-                                    <div className="flex flex-col">
-                                        <span className="font-mono text-xs text-brand-primary font-semibold">#{p.id.slice(0, 8)}</span>
-                                        <span className="text-[11px] text-ink-400 mt-0.5">{p.corridor}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex flex-col">
-                                        <span className="font-semibold text-ink-900">{p.receiverCompany}</span>
-                                        <span className="text-[11px] text-ink-400 mt-0.5">via {p.sourceChain}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className="font-semibold text-ink-900">${p.amount.toLocaleString()} <span className="text-ink-400 text-xs">{p.token}</span></span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-10 h-1.5 bg-surface-border rounded-full overflow-hidden">
-                                            <div className={`h-full ${p.riskScore > 70 ? 'bg-status-blocked' : p.riskScore > 40 ? 'bg-status-review' : 'bg-status-pass'}`} style={{ width: `${p.riskScore}%` }} />
-                                        </div>
-                                        <span className="text-[11px] font-semibold text-ink-600">{p.riskScore}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`badge ${
-                                        p.status === 'executed' || p.status === 'approved' ? 'badge-pass' :
-                                        p.status === 'blocked' ? 'badge-fail' :
-                                        'badge-pending'
-                                    }`}>
-                                        {p.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-xs text-ink-600 font-medium">{timeSince(p.createdAt)}</span>
-                                        <ChevronRight className={`w-4 h-4 text-ink-400 group-hover:text-brand-primary transition-all ${selectedPayment?.id === p.id ? 'translate-x-1 text-brand-primary' : ''}`} />
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            {filteredPayments.length === 0 && (
-                <EmptyState icon={Search} title="No matching settlements found" description="Adjust the filters above to see more transactions." />
+      {!selected ? (
+        <div className="content pad-t">
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Payment</th><th>Counterparty</th><th style={{ textAlign: 'right' }}>Amount</th><th>Reason</th><th>Required</th><th>Current</th><th>Risk</th><th>Age</th><th></th></tr>
+              </thead>
+              <tbody>
+                {visible.map((p) => {
+                  const risk = riskTone(p.riskScore);
+                  return (
+                    <tr key={p.id} onClick={() => setSelected(p)}>
+                      <td><div className="pay-id mono">#{p.id.slice(0, 8)}</div><div className="pay-sub">{p.corridor}</div></td>
+                      <td>{p.receiverCompany}</td>
+                      <td style={{ textAlign: 'right' }}><span className="amt num">${p.amount.toLocaleString()}</span></td>
+                      <td style={{ color: 'var(--ink-soft)' }}>{reasonFor(p)}</td>
+                      <td>2</td>
+                      <td><div className="dots"><span className={`pip${p.status !== 'pending' ? ' on' : ''}`} /><span className="pip" /></div></td>
+                      <td><span className="risk" style={{ color: risk.color }}><span className="d" style={{ background: 'currentColor' }} />{risk.label}</span></td>
+                      <td>{timeSince(p.createdAt)}</td>
+                      <td><button className="rev-btn" onClick={(e) => { e.stopPropagation(); setSelected(p); }}>Review</button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {visible.length === 0 && (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--ink-muted)', fontSize: 12.5 }}>No matching payments.</div>
             )}
+          </div>
         </div>
-
-        {/* Side Detail Panel */}
-        {selectedPayment && (
-            <div className="lg:w-1/3 animate-slide-right">
-                <div className="glass-card p-6 sticky top-24">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-sm font-bold uppercase tracking-wide text-ink-900">Settlement Details</h3>
-                        <button onClick={() => setSelectedPayment(null)} className="p-2 hover:bg-surface-elevated rounded-full text-ink-400">
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div className="p-4 rounded-lg bg-surface-elevated border border-surface-border flex items-center justify-between">
-                            <div>
-                                <p className="text-[11px] font-bold text-ink-400 uppercase tracking-wide mb-1">Current Risk Score</p>
-                                <p className={`text-2xl font-bold ${selectedPayment.riskScore > 70 ? 'text-status-blocked' : 'text-status-pass'}`}>{selectedPayment.riskScore}/100</p>
-                            </div>
-                            <div className={`p-3 rounded-full ${selectedPayment.riskScore > 70 ? 'bg-status-blocked/10' : 'bg-status-pass/10'}`}>
-                                {selectedPayment.riskScore > 70 ? <AlertTriangle className="w-6 h-6 text-status-blocked" /> : <ShieldCheck className="w-6 h-6 text-status-pass" />}
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            {[
-                                { l: 'Sender Organization', v: selectedPayment.senderCompany },
-                                { l: 'Receiver Organization', v: selectedPayment.receiverCompany },
-                                { l: 'Settlement Amount', v: `$${selectedPayment.amount.toLocaleString()} ${selectedPayment.token}` },
-                                { l: 'Compliance Route', v: selectedPayment.corridor },
-                                { l: 'Urgency Level', v: selectedPayment.urgency },
-                                { l: 'AI Intelligence', v: selectedPayment.aiDecision.replace(/_/g, ' ') },
-                            ].map(item => (
-                                <div key={item.l} className="flex justify-between items-center py-1">
-                                    <span className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide">{item.l}</span>
-                                    <span className="text-xs font-semibold text-ink-900">{item.v}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="pt-5 border-t border-surface-border flex flex-col gap-3">
-                            <button onClick={() => navigate(`/route-analysis/${selectedPayment.id}`)} className="w-full btn-secondary py-2.5 text-xs flex items-center justify-center gap-2">
-                                <Search className="w-4 h-4" /> Full Layer Analysis
-                            </button>
-
-                            {canApprove() && selectedPayment.status === 'pending' && (
-                                <div className="grid grid-cols-2 gap-3 mt-1">
-                                    <button onClick={() => handleAction(selectedPayment.id, 'approve')} className="py-2.5 text-xs font-semibold rounded-lg text-white bg-status-pass hover:bg-green-700 transition-colors">Authorize</button>
-                                    <button onClick={() => handleAction(selectedPayment.id, 'reject')} className="py-2.5 text-xs font-semibold rounded-lg text-white bg-status-blocked hover:bg-red-700 transition-colors">Veto</button>
-                                </div>
-                            )}
-
-                            {canApprove() && selectedPayment.status !== 'pending' && (
-                                <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-ink-400 mt-1">Transaction Finalized</p>
-                            )}
-                        </div>
-                    </div>
+      ) : (
+        <div className="content pad-t">
+          <button className="back" onClick={() => setSelected(null)}><IcChevronLeft />Back to Approvals</button>
+          <div className="split">
+            <div>
+              <div className="ev-head">
+                <div className="ev-id">#{selected.id.slice(0, 8)}</div>
+                <div className="ev-parties">{selected.senderCompany} <IcArrowRight className="" /> {selected.receiverCompany}</div>
+                <div className="ev-amt num">${selected.amount.toLocaleString()} {selected.token}</div>
+                <div className="ev-cor">{selected.corridor} · via {selected.sourceChain}</div>
+              </div>
+              <div className="ev-card">
+                <div className="ev-chead">Compliance &amp; Risk</div>
+                <div className="ev-cbody">
+                  <div className="check"><span className="mk">✓</span><span className="cl">Sanctions screening — clear</span></div>
+                  <div className="check"><span className="mk">✓</span><span className="cl">Wallet intelligence — clear</span></div>
+                  <div className="check"><span className="mk warn">!</span><span className="cl">{reasonFor(selected)}</span></div>
                 </div>
+              </div>
+              <div className="ev-card">
+                <div className="ev-chead">AI Advisory</div>
+                <div className="ev-cbody">
+                  <div style={{ padding: '10px 0' }}><span className="ai-chip">{selected.aiDecision.replace(/_/g, ' ')} — advisory only</span></div>
+                </div>
+              </div>
             </div>
-        )}
-      </div>
-    </div>
+
+            <div className="gate">
+              <div className="gate-head"><b>Approval controls</b></div>
+              <div className="req-line"><span className="l">Required reviewers</span><span className="v">2</span></div>
+              <div className="gate-lock"><IcLock /><b>EXECUTION GATE</b></div>
+              <div className="gate-copy">This payment requires dual authorization before settlement can begin.</div>
+              {canApprove() && ['pending', 'under_review', 'review'].includes(selected.status) ? (
+                <div className="gate-actions">
+                  <button className="btn" disabled={acting} onClick={() => handleAction(selected.id, 'reject')}>Reject</button>
+                  <button className="btn btn-primary" disabled={acting} onClick={() => handleAction(selected.id, 'approve')}>Approve</button>
+                </div>
+              ) : (
+                <div className="gate-copy" style={{ paddingBottom: 16 }}>Decision finalized — {selected.status.replace(/_/g, ' ')}.</div>
+              )}
+              <div style={{ padding: '0 20px 16px' }}>
+                <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate(`/route-analysis/${selected.id}`)}>Open Control Room</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };

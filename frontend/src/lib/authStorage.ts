@@ -1,5 +1,5 @@
 /** Namespaced localStorage keys for JWT + user snapshot. */ // FIXED: A3
-const appName = import.meta.env.VITE_APP_NAME || 'SettleGuard'; // FIXED: A3
+const appName = import.meta.env.VITE_APP_NAME || 'CertaPay'; // FIXED: A3
 
 export const AUTH_TOKEN_KEY = `${appName}_token`; // FIXED: A3
 export const AUTH_USER_KEY = `${appName}_user`; // FIXED: A3

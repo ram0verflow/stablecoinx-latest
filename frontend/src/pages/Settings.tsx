@@ -1,223 +1,174 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ToastProvider';
-import {
-  Shield, User, Wallet, Database, Lock,
-  Settings as SettingsIcon, RefreshCw, Activity,
-  Globe, Cpu, Server, Key, Network, Brain
-} from 'lucide-react';
-import { aiApi, authApi, monitoringApi } from '../lib/api';
-import { PageHeader } from '../components/ui/PageHeader';
-import { StatusDot } from '../components/StatusBadge';
+import { authApi, monitoringApi } from '../lib/api';
+
+interface UserRow { id: string; email: string; role: string; is_active: boolean }
+
+const ROLE_BADGE: Record<string, string> = {
+  admin: 'rb-admin', treasury_officer: 'rb-treasury', compliance_officer: 'rb-compliance',
+  reviewer: 'rb-reviewer', auditor: 'rb-auditor',
+};
+const ROLE_LABEL: Record<string, string> = {
+  admin: 'Admin', treasury_officer: 'Treasury', compliance_officer: 'Compliance', reviewer: 'Reviewer', auditor: 'Auditor',
+};
+
+const NAV_ITEMS = ['Organization', 'Users & Roles', 'Approval Controls', 'Security', 'Environment', 'Notifications'];
 
 export const Settings: React.FC = () => {
-  const { user, setWallet, updatePreference } = useAuthStore();
+  const { user, role, setWallet, updatePreference, token: authToken } = useAuthStore();
   const { showToast } = useToast();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_BACKEND_URL;
 
+  const [nav, setNav] = useState('Users & Roles');
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [usersRestricted, setUsersRestricted] = useState(false);
   const [aiEngine, setAiEngine] = useState(user?.aiPreference || 'ollama');
-  const [telegramAlerts, setTelegramAlerts] = useState(true);
-  const [serviceHealth, setServiceHealth] = useState({
-    ai: false,
-    base: false,
-    polygon: false,
-    neo4j: false,
-    redis: false,
-  });
-  const [refreshing, setRefreshing] = useState(false);
-  const [aiModels, setAiModels] = useState({ ollama: 'ollama', groq: 'groq' });
-
-  const refreshHealth = async () => {
-    setRefreshing(true);
-    try {
-      const { data } = await monitoringApi.stats();
-      const aiUp = data.ai_engine_status !== 'down';
-      setServiceHealth({
-        ai: aiUp,
-        base: !!data.rpc_status?.base_sepolia,
-        polygon: !!data.rpc_status?.polygon_amoy,
-        neo4j: !!data.neo4j_status,
-        redis: !!data.redis_status,
-      });
-      const health = await aiApi.getHealth();
-      setAiModels({
-        ollama: health.data?.ollama_model || 'ollama',
-        groq: health.data?.groq_model || 'groq',
-      });
-    } catch {
-      setServiceHealth({ ai: false, base: false, polygon: false, neo4j: false, redis: false });
-    } finally {
-      setTimeout(() => setRefreshing(false), 500);
-    }
-  };
+  const [health, setHealth] = useState({ ai: false, base: false, polygon: false, neo4j: false, redis: false });
 
   useEffect(() => {
-    refreshHealth();
-    const timer = setInterval(refreshHealth, 30_000);
-    return () => clearInterval(timer);
+    if (role !== 'admin' || !apiBaseUrl) { setUsersRestricted(true); return; }
+    fetch(`${apiBaseUrl}/api/v1/auth/users`, { headers: { Authorization: `Bearer ${authToken || ''}` } })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data) => setUsers(Array.isArray(data) ? data : []))
+      .catch(() => setUsersRestricted(true));
+  }, [role, authToken, apiBaseUrl]);
+
+  useEffect(() => {
+    monitoringApi.stats().then(({ data }) => setHealth({
+      ai: data.ai_engine_status !== 'down', base: !!data.rpc_status?.base_sepolia,
+      polygon: !!data.rpc_status?.polygon_amoy, neo4j: !!data.neo4j_status, redis: !!data.redis_status,
+    })).catch(() => {});
   }, []);
 
-  const handleDisconnect = () => {
-    setWallet('');
-    showToast('info', 'Wallet Disconnected', 'Your wallet has been disconnected from the session');
-  };
-
-  const handleSave = async () => {
+  const handleSavePreference = async () => {
     try {
       await authApi.updatePreference(aiEngine);
       updatePreference(aiEngine);
       showToast('success', 'Settings Saved', 'Your preferences have been updated');
-    } catch (error) {
+    } catch {
       showToast('error', 'Update Failed', 'Could not save your preferences');
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto animate-fade-in pb-20">
-      <PageHeader
-        title="System Settings"
-        description="Manage your identity, security protocols, and system orchestration parameters."
-        badge={
-          <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-ink-600 bg-surface-elevated border border-surface-border rounded-full px-3 py-1">
-            <SettingsIcon className="w-3 h-3 text-brand-primary" /> Configuration Portal
-          </span>
-        }
-      />
+    <>
+      <div className="topbar"><h1>Settings</h1></div>
+      <div className="settings-body">
+        <div className="snav">
+          {NAV_ITEMS.map((item) => (
+            <button key={item} className={`snav-item${nav === item ? ' on' : ''}`} onClick={() => setNav(item)}>{item}</button>
+          ))}
+        </div>
 
-      <div className="space-y-6">
-        {/* User Identity Section */}
-        <div className="grid md:grid-cols-2 gap-5">
-            <div className="glass-card p-6">
-                <h3 className="text-sm font-bold uppercase tracking-wide text-ink-900 mb-6 flex items-center gap-2">
-                    <User className="w-4 h-4 text-brand-primary" />
-                    User Identity
-                </h3>
-                <div className="space-y-5">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-brand-soft border border-surface-border flex items-center justify-center text-xl font-bold text-brand-primary">
-                            {user?.name?.charAt(0) || 'U'}
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-ink-900">{user?.name}</p>
-                            <p className="text-xs text-ink-400">{user?.email}</p>
-                        </div>
-                    </div>
-                    <div className="pt-4 border-t border-surface-border space-y-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide">Access Role</span>
-                            <span className="badge badge-pending">{user?.role}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide">Security Status</span>
-                            <span className="text-[11px] font-bold text-status-pass flex items-center gap-1 uppercase">
-                                <Shield className="w-3 h-3" /> Verified
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="glass-card p-6">
-                <h3 className="text-sm font-bold uppercase tracking-wide text-ink-900 mb-6 flex items-center gap-2">
-                    <Wallet className="w-4 h-4 text-brand-primary" />
-                    Web3 Integration
-                </h3>
-                {user?.walletAddress ? (
-                    <div className="space-y-5">
-                        <div className="p-4 rounded-lg bg-surface-elevated border border-surface-border">
-                            <p className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide mb-2">Custodial Address</p>
-                            <p className="text-xs font-mono text-ink-600 break-all">{user.walletAddress}</p>
-                        </div>
-                        <button onClick={handleDisconnect} className="w-full btn-secondary py-2.5 text-xs border-status-blocked/30 text-status-blocked">
-                            Revoke Wallet Access
-                        </button>
-                    </div>
+        <div className="scontent">
+          {nav === 'Users & Roles' && (
+            <>
+              <div className="sctitle">Users &amp; Roles</div>
+              <div className="scsub">Manage who can view, act on and authorize payments in this organization.</div>
+              <div className="table-wrap">
+                {usersRestricted ? (
+                  <table>
+                    <thead><tr><th>User</th><th>Role</th><th>Email</th><th>Status</th></tr></thead>
+                    <tbody>
+                      <tr>
+                        <td><div className="uname"><span className="uav">{(user?.name || 'U').charAt(0)}</span>{user?.name}</div></td>
+                        <td><span className={`rolebadge ${ROLE_BADGE[role || ''] || 'rb-auditor'}`}>{ROLE_LABEL[role || ''] || role}</span></td>
+                        <td className="mono">{user?.email}</td>
+                        <td className="stat on">Active</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-40 text-center">
-                        <div className="w-12 h-12 rounded-full bg-surface-elevated border border-dashed border-surface-border flex items-center justify-center mb-4">
-                            <Wallet className="w-5 h-5 text-ink-400" />
-                        </div>
-                        <p className="text-xs text-ink-400 font-medium">No wallet detected.<br/>Connect via navigation bar.</p>
-                    </div>
+                  <table>
+                    <thead><tr><th>User</th><th>Role</th><th>Email</th><th>Status</th></tr></thead>
+                    <tbody>
+                      {users.map((u) => (
+                        <tr key={u.id}>
+                          <td><div className="uname"><span className="uav">{u.email.charAt(0).toUpperCase()}</span>{u.email.split('@')[0]}</div></td>
+                          <td><span className={`rolebadge ${ROLE_BADGE[u.role] || 'rb-auditor'}`}>{ROLE_LABEL[u.role] || u.role}</span></td>
+                          <td className="mono">{u.email}</td>
+                          <td className={`stat${u.is_active ? ' on' : ''}`}>{u.is_active ? 'Active' : 'Inactive'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
-            </div>
-        </div>
+              </div>
+              {usersRestricted && <p style={{ fontSize: 11.5, color: 'var(--ink-muted)', marginTop: 10 }}>Full user roster is admin-only in this environment. Showing your own account.</p>}
 
-        {/* Engine Config */}
-        <div className="glass-card p-6">
-            <h3 className="text-sm font-bold uppercase tracking-wide text-ink-900 mb-6 flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-brand-primary" />
-                Pipeline Orchestration
-            </h3>
-            <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                    <label className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide block ml-1">AI Decision Engine Model</label>
-                    <select
-                        value={aiEngine}
-                        onChange={(e) => setAiEngine(e.target.value)}
-                        className="select-field"
-                    >
-                        <option value="ollama">{`Ollama (${aiModels.ollama}) - Local High-Privacy`}</option>
-                        <option value="groq">{`Groq (${aiModels.groq}) - Cloud Low-Latency`}</option>
-                    </select>
-                    <p className="text-[11px] text-ink-400 italic ml-1">Local inference is recommended for PII-sensitive compliance processing.</p>
-                </div>
-                <div className="space-y-3">
-                    <label className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide block ml-1">Notifications Protocol</label>
-                    <div className="flex items-center justify-between p-4 rounded-lg border border-surface-border bg-surface-elevated">
-                        <div>
-                            <p className="text-xs font-semibold text-ink-900">Telegram Infrastructure Alerting</p>
-                            <p className="text-[11px] text-ink-400">Real-time settlement lifecycle updates</p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={telegramAlerts} onChange={(e) => setTelegramAlerts(e.target.checked)} />
-                            <div className="w-10 h-5 bg-surface-border rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow peer-checked:bg-brand-primary"></div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
+              <div className="legend">
+                <div className="legend-title">Role permissions</div>
+                <div className="legend-row"><b>Admin</b>Full access — users, policies, environment and security settings.</div>
+                <div className="legend-row"><b>Treasury</b>Create and submit payments; cannot self-approve above threshold.</div>
+                <div className="legend-row"><b>Compliance</b>Reviews risk exceptions and manages compliance-linked policies.</div>
+                <div className="legend-row"><b>Reviewer</b>Approves or rejects payments queued for dual authorization.</div>
+                <div className="legend-row"><b>Auditor</b>Read-only access to audit trail, proofs and policy history.</div>
+              </div>
+            </>
+          )}
 
-        {/* System Health */}
-        <div className="glass-card p-6">
-            <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-bold uppercase tracking-wide text-ink-900 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-brand-primary" />
-                    Infrastructure Health
-                </h3>
-                <button onClick={refreshHealth} disabled={refreshing} className="p-2 hover:bg-surface-elevated rounded-full text-ink-400 transition-colors">
-                    <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                </button>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {nav === 'Security' && (
+            <>
+              <div className="sctitle">Profile &amp; Security</div>
+              <div className="scsub">Your identity and wallet connection.</div>
+              <div className="table-wrap" style={{ maxWidth: 480 }}>
+                <table>
+                  <tbody>
+                    <tr><td style={{ color: 'var(--ink-muted)' }}>Name</td><td style={{ fontWeight: 600 }}>{user?.name}</td></tr>
+                    <tr><td style={{ color: 'var(--ink-muted)' }}>Email</td><td className="mono">{user?.email}</td></tr>
+                    <tr><td style={{ color: 'var(--ink-muted)' }}>Role</td><td><span className={`rolebadge ${ROLE_BADGE[role || ''] || 'rb-auditor'}`}>{ROLE_LABEL[role || ''] || role}</span></td></tr>
+                    <tr><td style={{ color: 'var(--ink-muted)' }}>Wallet</td><td className="mono">{user?.walletAddress || 'Not connected'}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              {user?.walletAddress && (
+                <button className="btn" style={{ marginTop: 14, color: 'var(--red)' }} onClick={() => { setWallet(''); showToast('info', 'Wallet Disconnected', 'Your wallet has been disconnected'); }}>Revoke Wallet Access</button>
+              )}
+            </>
+          )}
+
+          {nav === 'Approval Controls' && (
+            <>
+              <div className="sctitle">Pipeline Orchestration</div>
+              <div className="scsub">AI advisory is informational only — deterministic policy always has final say.</div>
+              <div className="field" style={{ maxWidth: 360 }}>
+                <label>AI decision engine</label>
+                <select className="finput" value={aiEngine} onChange={(e) => setAiEngine(e.target.value)}>
+                  <option value="ollama">Ollama — local, high privacy</option>
+                  <option value="groq">Groq — cloud, low latency</option>
+                </select>
+              </div>
+              <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={handleSavePreference}>Save Preference</button>
+            </>
+          )}
+
+          {nav === 'Environment' && (
+            <>
+              <div className="sctitle">Infrastructure Health</div>
+              <div className="scsub">Live status from the running backend — nothing here is simulated.</div>
+              <div className="sgrid" style={{ maxWidth: 700 }}>
                 {[
-                    { key: 'ai', label: 'Inference', icon: Brain },
-                    { key: 'base', label: 'Base L2', icon: Globe },
-                    { key: 'polygon', label: 'Polygon', icon: Network },
-                    { key: 'neo4j', label: 'Graph DB', icon: Database },
-                    { key: 'redis', label: 'Cache', icon: Server },
-                ].map((s) => {
-                    const up = serviceHealth[s.key as keyof typeof serviceHealth];
-                    const Icon = s.icon;
-                    return (
-                        <div key={s.key} className="p-4 rounded-lg border border-surface-border bg-surface-elevated text-center group hover:border-brand-primary/30 transition-colors">
-                            <div className="flex justify-center mb-2">
-                              <StatusDot tone={up ? 'pass' : 'blocked'} />
-                            </div>
-                            <Icon className="w-5 h-5 mx-auto mb-2 text-ink-400 group-hover:text-ink-600 transition-colors" />
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-ink-600 mb-1">{s.label}</p>
-                            <p className={`text-[11px] font-bold ${up ? 'text-status-pass' : 'text-status-blocked'}`}>{up ? 'Online' : 'Offline'}</p>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
+                  ['Inference', health.ai], ['Base L2', health.base], ['Polygon', health.polygon],
+                  ['Graph DB', health.neo4j], ['Cache', health.redis],
+                ].map(([label, ok]) => (
+                  <div className="scard" key={label as string}>
+                    <div className="sname">{label}</div>
+                    <div className={`sstatus ${ok ? 'sst-h' : 'sst-d'}`}>{ok ? 'Healthy' : 'Offline'}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
-        <div className="flex justify-end pt-2 gap-4">
-            <button onClick={handleSave} className="btn-primary py-3 px-8 text-xs flex items-center gap-2">
-                <Key className="w-4 h-4" /> Commit Protocol Changes
-            </button>
+          {(nav === 'Organization' || nav === 'Notifications') && (
+            <>
+              <div className="sctitle">{nav}</div>
+              <div className="scsub">Not configurable in this environment yet.</div>
+            </>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 };

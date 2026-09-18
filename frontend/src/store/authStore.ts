@@ -18,12 +18,29 @@ interface AuthState {
   canApprove: () => boolean;
 }
 
+/**
+ * Read persisted auth synchronously so the very first render already knows
+ * whether the session is authenticated — avoids a flash to /login (and the
+ * resulting bounce back to /dashboard, losing the originally requested
+ * route) on a hard reload of any deep link.
+ */
+function readPersistedAuth(): Pick<AuthState, 'token' | 'user' | 'role' | 'isAuthenticated'> {
+  try {
+    const token = getStoredToken();
+    const role = localStorage.getItem('auth_role');
+    const userStr = localStorage.getItem('auth_user');
+    if (token && role && userStr) {
+      return { token, role, user: JSON.parse(userStr), isAuthenticated: true };
+    }
+  } catch {
+    // fall through to signed-out defaults
+  }
+  return { token: null, user: null, role: null, isAuthenticated: false };
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  token: null,
-  user: null,
-  role: null,
+  ...readPersistedAuth(),
   supabaseSession: null,
-  isAuthenticated: false,
 
   setAuth: (token, user, role) => {
     set({

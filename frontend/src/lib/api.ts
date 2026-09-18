@@ -39,6 +39,10 @@ api.interceptors.response.use(
   },
 ); // FIXED: A5
 
+export const healthApi = {
+  check: () => axios.get<{ status: string; checks: { database: boolean; redis: boolean } }>(`${API_BASE}/health`),
+};
+
 export const authApi = {
   login: (data: { email: string; password: string }) => api.post<AuthResponse>('/auth/login', data), // FIXED: A2
   register: (data: { email: string; password: string; full_name: string }) =>
@@ -65,6 +69,11 @@ export const aiApi = {
 
 export const routeApi = {
   analyze: (paymentId: string) => api.get<RouteAnalysis>(`/payments/${paymentId}/analysis`),
+};
+
+export const policyApi = {
+  rules: () => api.get('/policy/rules'),
+  check: (paymentId: string) => api.get(`/policy/check/${paymentId}`),
 };
 
 export const reportApi = {
