@@ -132,24 +132,20 @@ services:
       - key: TELEGRAM_CHAT_ID
         value: "0"
 
-      # CORS / cross-service URLs — filled in from the frontend service
-      # Render creates below, so the two services can find each other
-      # without hardcoding onrender.com URLs.
+      # CORS / cross-service URLs. Hardcoded rather than `fromService:
+      # property: host` — that property resolves to Render's internal
+      # short hostname (e.g. "certapay-backend"), not a public https:// URL,
+      # which silently breaks both a browser-facing env var and an exact-
+      # match CORS origins list. Verified live: it shipped as the literal
+      # string "certapay-backend" with no scheme, which the browser then
+      # resolved as a relative path against the frontend's own origin.
+      # If either service is ever renamed, update these two lines to match.
       - key: FRONTEND_URL
-        fromService:
-          name: certapay-frontend
-          type: web
-          property: host
+        value: https://certapay-frontend.onrender.com
       - key: BACKEND_URL
-        fromService:
-          name: certapay-backend
-          type: web
-          property: host
+        value: https://certapay-backend.onrender.com
       - key: CORS_ORIGINS
-        fromService:
-          name: certapay-frontend
-          type: web
-          property: host
+        value: https://certapay-frontend.onrender.com
 
       # Privacy simulation services — not part of this blueprint; app
       # already runs its FHE/ZK checks in simulated mode without these.
@@ -220,11 +216,12 @@ services:
         source: /*
         destination: /index.html
     envVars:
+      # Hardcoded, not fromService/host — see the backend's CORS_ORIGINS
+      # comment above for why. This one is baked into the static bundle at
+      # Vite build time, so a wrong value here isn't fixable by editing the
+      # live env var afterward; it needs a fresh build.
       - key: VITE_API_BASE_URL
-        fromService:
-          name: certapay-backend
-          type: web
-          property: host
+        value: https://certapay-backend.onrender.com
       - key: VITE_APP_NAME
         value: CertaPay
 
