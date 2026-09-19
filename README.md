@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F2027,50:203A43,100:2C5364&height=210&section=header&text=CertaPay&fontSize=72&fontColor=ffffff&animation=fadeIn&fontAlignY=36&desc=Compliance-Aware%20Stablecoin%20Settlement%20Orchestration&descAlignY=56&descSize=19&descColor=E2E8F0" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F2027,50:203A43,100:2C5364&height=210&section=header&text=CertaPay&fontSize=72&fontColor=ffffff&animation=fadeIn&fontAlignY=36&desc=The%20Compliance%20Layer%20for%20Stablecoin%20Payments&descAlignY=56&descSize=19&descColor=E2E8F0" width="100%" />
 
 <a href="#-architecture">
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=20&pause=1200&color=38BDF8&center=true&vCenter=true&width=760&lines=24-layer+compliance+pipeline+before+a+single+token+moves;AML+%2B+Sanctions+%2B+Wallet-Graph+%2B+AI+%2B+ZK+%2B+FHE;Base+Sepolia+%C2%B7+Polygon+Amoy+%C2%B7+FastAPI+%C2%B7+React+%2B+TypeScript;Every+decision+explainable.+Every+transfer+attested+on-chain." alt="Typing SVG" />
