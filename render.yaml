@@ -70,13 +70,10 @@ services:
       # startup validation requires these to be non-empty. Fill in real
       # values in the Render dashboard.
       - key: SUPABASE_URL
-        value: ""
         sync: false
       - key: SUPABASE_ANON_KEY
-        value: ""
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
-        value: ""
         sync: false
 
       # AI advisory — Groq is the primary path; Ollama is a local fallback
@@ -88,7 +85,6 @@ services:
       - key: OLLAMA_MODEL
         value: gemma:2b
       - key: GROQ_API_KEY
-        value: ""
         sync: false
       - key: GROQ_MODEL
         value: llama3-8b-8192
@@ -105,24 +101,18 @@ services:
       - key: POLYGON_AMOY_CHAIN_ID
         value: "80002"
       - key: BACKEND_WALLET_PRIVATE_KEY
-        value: ""
         sync: false
       - key: BACKEND_WALLET_ADDRESS
-        value: ""
         sync: false
       - key: CONTRACT_ABI_PATH
         value: contracts/out
       - key: CONTRACT_ADDRESS_SETTLEMENT
-        value: ""
         sync: false
       - key: CONTRACT_ADDRESS_COMPLIANCE
-        value: ""
         sync: false
       - key: CONTRACT_ADDRESS_TREASURY
-        value: ""
         sync: false
       - key: CONTRACT_ADDRESS_REGISTRY
-        value: ""
         sync: false
 
       # Wallet graph intelligence — optional, degrades gracefully. Point at
@@ -132,7 +122,6 @@ services:
       - key: NEO4J_USERNAME
         value: neo4j
       - key: NEO4J_PASSWORD
-        value: changeme
         sync: false
 
       # Telegram alerts — optional (see docs/SPONSOR_INTEGRATIONS.md; this
@@ -213,6 +202,9 @@ services:
     plan: free
     region: oregon
     maxmemoryPolicy: allkeys-lru
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
 
   # ── Frontend: static Vite/React build ─────────────────────────────────
   - name: certapay-frontend
@@ -224,7 +216,8 @@ services:
     routes:
       # SPA client-side routing (React Router) — every path falls back to
       # index.html so a hard refresh on e.g. /obfuscation-intelligence works.
-      - source: /*
+      - type: rewrite
+        source: /*
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
@@ -238,7 +231,6 @@ services:
       # Wallet connect / chain config — needs a real WalletConnect Cloud
       # project ID to enable wallet connection in production.
       - key: VITE_WALLETCONNECT_PROJECT_ID
-        value: ""
         sync: false
       - key: VITE_CHAIN_ID
         value: "84532"
@@ -250,10 +242,8 @@ services:
       # Supabase (frontend anon key — safe to expose client-side, but still
       # project-specific, so left blank rather than a fake placeholder).
       - key: VITE_SUPABASE_URL
-        value: ""
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
-        value: ""
         sync: false
 
       # Demo account credentials shown in the login page's "Use a demo
