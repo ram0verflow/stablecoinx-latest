@@ -35,7 +35,7 @@
 
 <br/>
 
-## 🧭 What is CertaPay?
+##  What is CertaPay?
 
 **CertaPay** (repo codename `StableCoinX`) is a full-stack reference implementation of what *institutional-grade* stablecoin settlement infrastructure looks like when compliance isn't bolted on afterward — it's the pipeline itself.
 
@@ -47,19 +47,19 @@ It's a hackathon build — and it reads like one that took compliance engineerin
 <tr>
 <td width="33%" valign="top">
 
-### 🛡️ Compliance-first
+###  Compliance-first
 24-stage pipeline: country policy → treasury controls → AML/sanctions → wallet graph → issuer risk → cross-chain governance → AI advisory → deterministic veto.
 
 </td>
 <td width="33%" valign="top">
 
-### 🔐 Privacy + Proof
+###  Privacy + Proof
 FHE-style encrypted threshold checks and a ZK proof bundle attesting compliance, registered on-chain via a dedicated `SettlementProofRegistry`.
 
 </td>
 <td width="33%" valign="top">
 
-### 🕵️ Forensic-grade intel
+###  Forensic-grade intel
 Neo4j wallet-relationship graphs, a protocol-aware Bitcoin CoinJoin classifier, and an EVM + Tron mixer-signal explorer — each keeping evidence separate from verdicts.
 
 </td>
@@ -68,30 +68,30 @@ Neo4j wallet-relationship graphs, a protocol-aware Bitcoin CoinJoin classifier, 
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ### System overview
 
 ```mermaid
 flowchart TD
-    subgraph CLIENT["🖥️ CLIENT LAYER"]
+    subgraph CLIENT[" CLIENT LAYER"]
         FE["React 18 + TypeScript Dashboard<br/>Vite · Tailwind · Radix UI"]
         WALLET["Wallet Connect<br/>wagmi + viem"]
     end
 
-    subgraph EDGE["🔑 EDGE & IDENTITY"]
+    subgraph EDGE[" EDGE & IDENTITY"]
         AUTH["Supabase Auth<br/>JWT + RBAC"]
         API["FastAPI Gateway<br/>Rate limiting · CORS · Request logging"]
     end
 
-    PI["📥 Payment Intent<br/>sender · receiver · amount · chain · token"]
+    PI[" Payment Intent<br/>sender · receiver · amount · chain · token"]
 
-    subgraph POLICY["🏛️ POLICY & TREASURY"]
+    subgraph POLICY[" POLICY & TREASURY"]
         CP["Country Policy Engine"]
         TC["Corporate Treasury Controls"]
     end
 
-    subgraph RISK["🕵️ COMPLIANCE & RISK INTELLIGENCE"]
+    subgraph RISK[" COMPLIANCE & RISK INTELLIGENCE"]
         CE["Compliance Engine<br/>AML · Sanctions · PEP"]
         WG["Wallet Graph Intelligence<br/>Neo4j"]
         PROV["Provenance & Counterparty Risk"]
@@ -100,31 +100,31 @@ flowchart TD
         MIX["Mixer Signal Explorer<br/>EVM + Tron"]
     end
 
-    subgraph DECIDE["🧠 DECISIONING"]
+    subgraph DECIDE[" DECISIONING"]
         CG["Cross-Chain Governance"]
         LQ["Liquidity & Cost Engine"]
         AI["AI Decision Engine<br/>Ollama ⇄ Groq (advisory only)"]
         VETO{{"Policy Final Veto<br/>deterministic, hard rules"}}
     end
 
-    subgraph PRIVACY["🔒 PRIVACY & PROOF"]
+    subgraph PRIVACY[" PRIVACY & PROOF"]
         FHE["FHE Private Threshold Checks"]
         ZK["ZK Compliance Proof Generator"]
     end
 
     DECISION{"Final Status?"}
 
-    subgraph HUMAN["🙋 HUMAN-IN-THE-LOOP"]
+    subgraph HUMAN[" HUMAN-IN-THE-LOOP"]
         APR["Approval Queue<br/>multi-level review"]
     end
 
-    subgraph CHAIN["⛓️ EXECUTION & SETTLEMENT"]
+    subgraph CHAIN[" EXECUTION & SETTLEMENT"]
         EXEC["Execution Orchestrator"]
         SC["Smart Contracts<br/>Base Sepolia · Polygon Amoy"]
         REG["On-chain Proof Registry"]
     end
 
-    subgraph OBS["📡 OBSERVABILITY"]
+    subgraph OBS[" OBSERVABILITY"]
         NOTIF["Notifications<br/>Telegram · n8n · in-app"]
         AUDIT["Audit Vault"]
         REVAL["Historical Revalidation"]
@@ -189,7 +189,7 @@ sequenceDiagram
 
 ---
 
-## 🔢 The 24-Layer Compliance Pipeline
+## The 24-Layer Compliance Pipeline
 
 Every settlement traverses all 24 layers sequentially. A failure at any layer halts the pipeline and returns a detailed, per-layer rejection — never a silent pass.
 
@@ -198,42 +198,42 @@ Every settlement traverses all 24 layers sequentially. A failure at any layer ha
 
 | # | Layer | What it does |
 |:-:|---|---|
-| 1 | 🖥️ **Frontend** | React + TypeScript dashboard for payment initiation, monitoring, and governance controls |
-| 2 | 🔑 **Auth** | Supabase JWT authentication with role-based access control |
-| 3 | 👛 **Wallet** | Wallet connection, ownership validation, address registry |
-| 4 | 📥 **Payment Intent** | Canonical, immutable settlement request representation |
-| 5 | 🏛️ **Country Policy** | Jurisdiction-aware corridor rules, sanctioned-country checks, transfer limits |
-| 6 | 🏦 **Corporate Treasury Controls** | Daily/monthly limits, multi-sig thresholds, department budgets |
-| 7 | 🕵️ **Compliance Engine** | AML screening, sanctions checks (OFAC/EU/UN), PEP detection, KYC/KYB |
-| 8 | 🕸️ **Wallet Graph Intelligence** | Neo4j graph analytics — wallet relationships, mixer/tumbler adjacency, cluster risk |
-| 9 | 🪙 **Stablecoin Issuer Risk Engine** | Reserve composition, audit history, depeg events, redemption reliability |
-| 10 | 🌉 **Cross-Chain Governance** | Bridge risk, destination-chain health, governance-approved chains |
-| 11 | 💧 **Liquidity Cost Engine** | Slippage, gas, bridge fees, optimal-route computation |
-| 12 | 🤖 **AI Decision Engine** | LLM-powered advisory synthesis (Ollama / Groq) — **never** the final decision-maker |
-| 13 | ⚖️ **Policy Final Veto** | Deterministic hard-rule aggregation — pure rule evaluation, zero probabilistic logic |
-| 14 | 🔒 **FHE Private Checks** | Compliance thresholds evaluated without exposing raw transaction values |
-| 15 | 🧬 **ZK Proof Generator** | Generates a compliance proof bundle for on-chain attestation |
-| 16 | 🙋 **Human Approval Workflow** | Manual review queue with multi-level approval chains + Telegram alerts |
-| 17 | ⚙️ **Execution Orchestrator** | Sequences on-chain ops: approval, authorization, settlement, retries, gas |
-| 18 | 📜 **Smart Contracts** | Solidity contracts for authorization, policy, and settlement |
-| 19 | ⛓️ **Blockchain Settlement** | Atomic ERC-20 transfers and cross-chain bridge execution |
-| 20 | 🗄️ **On-chain Proof Registry** | Immutable ZK proof + compliance attestation storage |
-| 21 | 🔔 **Notifications** | Telegram, in-app, and webhook (n8n) real-time alerts |
-| 22 | 🔏 **Audit Vault** | Cryptographically-sealed, immutable audit log |
-| 23 | ⏪ **Historical Revalidation** | Retroactively re-scores past settlements against updated rules/sanctions lists |
-| 24 | 📊 **Monitoring** | Real-time health, latency, and analytics dashboard |
+| 1 | **Frontend** | React + TypeScript dashboard for payment initiation, monitoring, and governance controls |
+| 2 |  **Auth** | Supabase JWT authentication with role-based access control |
+| 3 |  **Wallet** | Wallet connection, ownership validation, address registry |
+| 4 |  **Payment Intent** | Canonical, immutable settlement request representation |
+| 5 |  **Country Policy** | Jurisdiction-aware corridor rules, sanctioned-country checks, transfer limits |
+| 6 |  **Corporate Treasury Controls** | Daily/monthly limits, multi-sig thresholds, department budgets |
+| 7 |  **Compliance Engine** | AML screening, sanctions checks (OFAC/EU/UN), PEP detection, KYC/KYB |
+| 8 |  **Wallet Graph Intelligence** | Neo4j graph analytics — wallet relationships, mixer/tumbler adjacency, cluster risk |
+| 9 |  **Stablecoin Issuer Risk Engine** | Reserve composition, audit history, depeg events, redemption reliability |
+| 10 |  **Cross-Chain Governance** | Bridge risk, destination-chain health, governance-approved chains |
+| 11 |  **Liquidity Cost Engine** | Slippage, gas, bridge fees, optimal-route computation |
+| 12 |  **AI Decision Engine** | LLM-powered advisory synthesis (Ollama / Groq) — **never** the final decision-maker |
+| 13 |  **Policy Final Veto** | Deterministic hard-rule aggregation — pure rule evaluation, zero probabilistic logic |
+| 14 |  **FHE Private Checks** | Compliance thresholds evaluated without exposing raw transaction values |
+| 15 |  **ZK Proof Generator** | Generates a compliance proof bundle for on-chain attestation |
+| 16 |  **Human Approval Workflow** | Manual review queue with multi-level approval chains + Telegram alerts |
+| 17 |  **Execution Orchestrator** | Sequences on-chain ops: approval, authorization, settlement, retries, gas |
+| 18 |  **Smart Contracts** | Solidity contracts for authorization, policy, and settlement |
+| 19 |  **Blockchain Settlement** | Atomic ERC-20 transfers and cross-chain bridge execution |
+| 20 | **On-chain Proof Registry** | Immutable ZK proof + compliance attestation storage |
+| 21 | **Notifications** | Telegram, in-app, and webhook (n8n) real-time alerts |
+| 22 | **Audit Vault** | Cryptographically-sealed, immutable audit log |
+| 23 | **Historical Revalidation** | Retroactively re-scores past settlements against updated rules/sanctions lists |
+| 24 | **Monitoring** | Real-time health, latency, and analytics dashboard |
 
 </details>
 
 ---
 
-## ✨ Feature Highlights
+## Feature Highlights
 
 <table>
 <tr>
 <td width="50%" valign="top">
 
-#### 🕵️ Obfuscation Intelligence
+#### Obfuscation Intelligence
 Standalone, benchmarked **Bitcoin CoinJoin classifier** (`tools/obfuscation_classifier`) detecting legacy Whirlpool and Wasabi 2.0/WabiSabi structural patterns from public transaction data. Reports *evidence*, never a verdict, and keeps five signals — protocol classification, obfuscation confidence, illicit attribution, provenance confidence, policy recommendation — explicitly separate.
 
 > *"Privacy is not guilt. Uncertainty is not clearance."* — baked into every response.
@@ -243,7 +243,7 @@ Standalone, benchmarked **Bitcoin CoinJoin classifier** (`tools/obfuscation_clas
 </td>
 <td width="50%" valign="top">
 
-#### 🌊 Mixer Signal Explorer
+####  Mixer Signal Explorer
 Cross-chain mixer-adjacency signals for **EVM chains** (Etherscan-family, requires an API key — honestly reports "unavailable" rather than faking a result without one) and **Tron** (via TronScan's free public API). Surfaced as its own dashboard page, kept as a separate signal from the CoinJoin classifier's output.
 
 </td>
@@ -251,13 +251,13 @@ Cross-chain mixer-adjacency signals for **EVM chains** (Etherscan-family, requir
 <tr>
 <td width="50%" valign="top">
 
-#### 🧠 Dual-Provider AI Advisory
+####  Dual-Provider AI Advisory
 LLM synthesis via **Ollama** (local, `gemma:2b`) with automatic fallback to **Groq** (`llama3-8b-8192`). PII (wallet addresses) is redacted before any prompt leaves the process. The AI is explanatory and advisory only — the deterministic **Policy Final Veto** always has the last word.
 
 </td>
 <td width="50%" valign="top">
 
-#### 🔒 FHE + ZK Privacy Layer
+####  FHE + ZK Privacy Layer
 Encrypted-style threshold checks and a SHA-256-based ZK compliance proof bundle, architected to be swapped for real Groth16/PLONK circuits (`snarkjs` + Circom) without changing the pipeline shape. **Currently a cryptographically-honest simulation** — see [Honest Status](#-honest-status--known-limitations).
 
 </td>
@@ -265,13 +265,13 @@ Encrypted-style threshold checks and a SHA-256-based ZK compliance proof bundle,
 <tr>
 <td width="50%" valign="top">
 
-#### 🕸️ Wallet Graph Intelligence
+#### Wallet Graph Intelligence
 Neo4j-backed relationship graphs flag mixer-adjacent clusters and laundering patterns. Fails **closed**: an unreachable Neo4j returns `medium` risk + `neo4j_degraded: true` — never a silent `low`.
 
 </td>
 <td width="50%" valign="top">
 
-#### 📜 On-chain Proof Registry
+####  On-chain Proof Registry
 Every settlement's compliance decision, ZK proof hash, AI decision, and policy version is registered on a dedicated `SettlementProofRegistry` contract — independently verifiable on BaseScan.
 
 </td>
@@ -280,7 +280,7 @@ Every settlement's compliance decision, ZK proof hash, AI decision, and policy v
 
 ---
 
-## 🧩 Product Tour
+##  Product Tour
 
 The frontend ships as a single-page app with role-gated routes:
 
