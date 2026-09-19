@@ -42,7 +42,11 @@ export function ConfidenceGauge({ confidence, tier, scheme = 'confidence' }: { c
   const stroke = 10;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(1, confidence));
+  // Clamped to (3%, 97%) for display only — real-world pattern matching is
+  // never absolute certainty either way, so the gauge never claims it is.
+  // The underlying tier/score data (API response, matched rules list) is
+  // untouched; this only affects the ring fill and the number shown here.
+  const pct = Math.max(0.03, Math.min(0.97, confidence));
   const palette = scheme === 'risk' ? RISK_TIER_COLOR : TIER_COLOR;
   const color = palette[tier] || 'var(--ink-faint)';
 
