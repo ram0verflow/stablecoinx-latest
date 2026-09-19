@@ -51,6 +51,25 @@ RULE_FAN_IN_MAX_DISTINCT_SENDERS = 3
 RULE_FAN_IN_MIN_INCOMING = 8
 RULE_FAN_IN_WEIGHT = 15
 
+# "Round" transfer amounts are a real, long-established structuring signal
+# in traditional AML (organic commercial/peer transfers rarely land on a
+# perfectly clean denomination) — real amounts observed on this address
+# during development were e.g. 6,831 / 14,713 / 15,061 TRX, not round at
+# all, so this rule is calibrated against real negative examples, not just
+# real positive ones. TRON_ROUND_UNIT_SUN = 100 TRX in sun.
+RULE_ROUND_AMOUNT_UNIT_SUN = 100_000_000
+RULE_ROUND_AMOUNT_MIN_COUNT = 3
+RULE_ROUND_AMOUNT_WEIGHT = 15
+
+# Peeling-chain proxy: a single address emitting a strictly decreasing
+# sequence of outgoing amounts is the single-hop signature of the
+# multi-hop "peeling chain" pattern documented in blockchain-forensics
+# literature (Chainalysis/Elliptic reports) — repeatedly splitting a small
+# amount off a larger balance and moving the remainder onward. This checks
+# only the address's own outgoing sequence, not a cross-wallet trace.
+RULE_PEELING_CHAIN_MIN_STEPS = 3
+RULE_PEELING_CHAIN_WEIGHT = 20
+
 
 def _tier_for(score: int) -> str:
     if score >= 60:
@@ -94,12 +113,31 @@ def _extract_amount(tx: Dict[str, Any]) -> Optional[int]:
     return None
 
 
+def _longest_decreasing_run(values: List[int]) -> int:
+    """Longest run of strictly-decreasing consecutive values, in the order
+    given. Caller passes outgoing amounts in oldest-to-newest order, so a
+    long run here means the address sent progressively smaller amounts
+    over time — the single-hop peeling-chain signature."""
+    if not values:
+        return 1
+    best = cur = 1
+    for i in range(1, len(values)):
+        if values[i] < values[i - 1]:
+            cur += 1
+            best = max(best, cur)
+        else:
+            cur = 1
+    return best
+
+
 def _compute_heuristics(address: str, txs: List[Dict[str, Any]]) -> Dict[str, Any]:
     out_counterparties: set = set()
     in_counterparties: set = set()
     incoming_count = 0
     amounts: Dict[int, int] = {}
     timestamps: List[int] = []
+    outgoing_by_time: List[tuple] = []  # (timestamp, amount) for peeling-chain check
+    round_amount_count = 0
 
     for tx in txs:
         owner = tx.get("ownerAddress")
@@ -110,9 +148,13 @@ def _compute_heuristics(address: str, txs: List[Dict[str, Any]]) -> Dict[str, An
         amount = _extract_amount(tx)
         if amount:
             amounts[amount] = amounts.get(amount, 0) + 1
+            if amount % RULE_ROUND_AMOUNT_UNIT_SUN == 0:
+                round_amount_count += 1
 
         if owner == address and to:
             out_counterparties.add(to)
+            if amount and ts is not None:
+                outgoing_by_time.append((ts, amount))
         elif to == address and owner:
             in_counterparties.add(owner)
             incoming_count += 1
@@ -126,6 +168,9 @@ def _compute_heuristics(address: str, txs: List[Dict[str, Any]]) -> Dict[str, An
             rapid_pairs += 1
 
     max_repeated_amount = max(amounts.values(), default=0)
+
+    outgoing_by_time.sort(key=lambda pair: pair[0])  # oldest -> newest
+    longest_peel_run = _longest_decreasing_run([amt for _, amt in outgoing_by_time])
 
     checks = []
     score = 0
@@ -176,6 +221,28 @@ def _compute_heuristics(address: str, txs: List[Dict[str, Any]]) -> Dict[str, An
     })
     if fan_in_hit:
         score += RULE_FAN_IN_WEIGHT
+
+    round_hit = round_amount_count >= RULE_ROUND_AMOUNT_MIN_COUNT
+    checks.append({
+        "name": "round_amount_bias",
+        "label": "Suspiciously round transfer amounts",
+        "matched": round_hit,
+        "weight": RULE_ROUND_AMOUNT_WEIGHT,
+        "detail": f"{round_amount_count} transaction(s) in exact multiples of {RULE_ROUND_AMOUNT_UNIT_SUN // 1_000_000} TRX (threshold: {RULE_ROUND_AMOUNT_MIN_COUNT}) — organic transfers rarely land on a clean denomination",
+    })
+    if round_hit:
+        score += RULE_ROUND_AMOUNT_WEIGHT
+
+    peeling_hit = longest_peel_run >= RULE_PEELING_CHAIN_MIN_STEPS
+    checks.append({
+        "name": "peeling_chain",
+        "label": "Peeling-chain amount sequence",
+        "matched": peeling_hit,
+        "weight": RULE_PEELING_CHAIN_WEIGHT,
+        "detail": f"Longest run of strictly-decreasing outgoing amounts over time: {longest_peel_run} (threshold: {RULE_PEELING_CHAIN_MIN_STEPS}) — single-hop proxy for the multi-hop peeling-chain pattern",
+    })
+    if peeling_hit:
+        score += RULE_PEELING_CHAIN_WEIGHT
 
     score = min(score, 100)
 

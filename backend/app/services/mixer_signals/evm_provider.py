@@ -24,13 +24,23 @@ from app.services.mixer_signals.tron_provider import (
     RULE_FAN_IN_WEIGHT,
     RULE_FAN_OUT_MIN_COUNTERPARTIES,
     RULE_FAN_OUT_WEIGHT,
+    RULE_PEELING_CHAIN_MIN_STEPS,
+    RULE_PEELING_CHAIN_WEIGHT,
     RULE_RAPID_SUCCESSION_MAX_DELTA_SECONDS,
     RULE_RAPID_SUCCESSION_MIN_PAIRS,
     RULE_RAPID_SUCCESSION_WEIGHT,
     RULE_REPEATED_AMOUNT_MIN_COUNT,
     RULE_REPEATED_AMOUNT_WEIGHT,
+    _longest_decreasing_run,
     _tier_for,
 )
+
+# EVM native-currency amounts are wei (18 decimals) rather than Tron's sun
+# (6 decimals) — "round" here means an exact multiple of 0.01 of the native
+# token, the EVM-appropriate equivalent of the Tron rule's 100 TRX unit.
+RULE_ROUND_AMOUNT_UNIT_WEI = 10 ** 16
+RULE_ROUND_AMOUNT_MIN_COUNT = 3
+RULE_ROUND_AMOUNT_WEIGHT = 15
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +80,8 @@ def _compute_heuristics(address: str, txs: list) -> Dict[str, Any]:
     incoming_count = 0
     amounts: Dict[str, int] = {}
     timestamps: list = []
+    outgoing_by_time: list = []  # (timestamp, amount_int) for peeling-chain check
+    round_amount_count = 0
 
     for tx in txs:
         frm = (tx.get("from") or "").lower()
@@ -78,10 +90,15 @@ def _compute_heuristics(address: str, txs: list) -> Dict[str, Any]:
         if ts is not None:
             timestamps.append(int(ts))
         value = tx.get("value")
+        value_int = int(value) if value else 0
         if value:
             amounts[value] = amounts.get(value, 0) + 1
+            if value_int % RULE_ROUND_AMOUNT_UNIT_WEI == 0:
+                round_amount_count += 1
         if frm == address.lower() and to:
             out_counterparties.add(to)
+            if value_int and ts is not None:
+                outgoing_by_time.append((int(ts), value_int))
         elif to == address.lower() and frm:
             in_counterparties.add(frm)
             incoming_count += 1
@@ -92,6 +109,9 @@ def _compute_heuristics(address: str, txs: list) -> Dict[str, Any]:
         if 0 <= timestamps[i - 1] - timestamps[i] <= RULE_RAPID_SUCCESSION_MAX_DELTA_SECONDS
     )
     max_repeated_amount = max(amounts.values(), default=0)
+
+    outgoing_by_time.sort(key=lambda pair: pair[0])
+    longest_peel_run = _longest_decreasing_run([amt for _, amt in outgoing_by_time])
 
     checks = []
     score = 0
@@ -115,6 +135,16 @@ def _compute_heuristics(address: str, txs: list) -> Dict[str, Any]:
     checks.append({"name": "fan_in_aggregation", "label": "Concentrated fan-in from few senders", "matched": fan_in_hit, "weight": RULE_FAN_IN_WEIGHT, "detail": f"{incoming_count} incoming transactions from only {len(in_counterparties)} distinct sender(s) (thresholds: >= {RULE_FAN_IN_MIN_INCOMING} incoming, <= {RULE_FAN_IN_MAX_DISTINCT_SENDERS} senders)"})
     if fan_in_hit:
         score += RULE_FAN_IN_WEIGHT
+
+    round_hit = round_amount_count >= RULE_ROUND_AMOUNT_MIN_COUNT
+    checks.append({"name": "round_amount_bias", "label": "Suspiciously round transfer amounts", "matched": round_hit, "weight": RULE_ROUND_AMOUNT_WEIGHT, "detail": f"{round_amount_count} transaction(s) in exact multiples of 0.01 native token (threshold: {RULE_ROUND_AMOUNT_MIN_COUNT}) — organic transfers rarely land on a clean denomination"})
+    if round_hit:
+        score += RULE_ROUND_AMOUNT_WEIGHT
+
+    peeling_hit = longest_peel_run >= RULE_PEELING_CHAIN_MIN_STEPS
+    checks.append({"name": "peeling_chain", "label": "Peeling-chain amount sequence", "matched": peeling_hit, "weight": RULE_PEELING_CHAIN_WEIGHT, "detail": f"Longest run of strictly-decreasing outgoing amounts over time: {longest_peel_run} (threshold: {RULE_PEELING_CHAIN_MIN_STEPS}) — single-hop proxy for the multi-hop peeling-chain pattern"})
+    if peeling_hit:
+        score += RULE_PEELING_CHAIN_WEIGHT
 
     score = min(score, 100)
     return {
