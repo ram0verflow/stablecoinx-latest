@@ -588,6 +588,18 @@ def seed_db():
                     )
                 )
                 db.commit()
+            else:
+                # Always keep the risk-bearing fields in sync with current
+                # logic, even on an already-seeded row — these are fully
+                # derived/regenerable, and a stale copy here is exactly the
+                # bug class that let live Postgres serve pre-provenance
+                # results after this feature shipped (create_all() doesn't
+                # alter existing tables, and this block previously only
+                # wrote a decision once, ever, per payment).
+                existing_decision.wallet_risk_result = wallet_risk_result
+                existing_decision.counterparty_risk_result = counterparty_risk_result
+                existing_decision.final_decision = final_decision
+                db.commit()
 
             existing_approval = db.query(Approval).filter(Approval.payment_id == existing.id).first()
             if not existing_approval and existing.status in [PaymentStatus.under_review, PaymentStatus.executed]:
