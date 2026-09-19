@@ -6,6 +6,7 @@ import { useToast } from '../components/ToastProvider';
 import { getStatusTone, type Tone } from '../components/StatusBadge';
 import { IcArrowRight, IcLock, IcAlertCircle } from '../components/scx/icons';
 import { CounterpartyIntelligenceCard } from '../components/CounterpartyIntelligenceCard';
+import { ProvenanceCard } from '../components/ProvenanceCard';
 import type { CounterpartyIntelligence } from '../types';
 
 interface PipelineStage { label: string; passed: boolean; status: string; detail: string }
@@ -226,6 +227,7 @@ export const RouteAnalysis: React.FC = () => {
         <>
           <div className="sec-label" style={{ marginTop: 18 }}>Compliance & Risk — Counterparty Intelligence</div>
           <CounterpartyIntelligenceCard intel={payment.counterparty_intelligence} />
+          <ProvenanceCard provenance={payment.counterparty_intelligence?.provenance} />
         </>
       )}
 

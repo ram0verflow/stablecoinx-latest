@@ -442,6 +442,47 @@ export interface CounterpartyRouteTransparency {
   notes: string | null;
 }
 
+// ── Provenance & Path Integrity ──────────────────────────────
+export type TerminalState = 'attributed' | 'custodial_opaque' | 'infra_opaque' | 'privacy_opaque' | 'sanctioned' | 'unresolved';
+export type PathIntegrity = 'CLEAN' | 'DEGRADED' | 'COMPROMISED';
+
+export interface ProvenanceGraphNode {
+  address: string;
+  depth: number;
+  terminal_state: TerminalState | null;
+  label: { class: string; entity: string; source: string; confidence: number } | null;
+  lifecycle?: { first_seen_minutes_ago?: number; terminal_nonce?: number; residual_balance_frac?: number; dwell_seconds?: number } | null;
+  value_share: number;
+  is_disposable?: boolean;
+  is_gas_funder?: boolean;
+  fan_out_count?: number | null;
+}
+
+export interface ProvenanceGraphEdge {
+  from: string;
+  to: string;
+  value_share: number | null;
+  depth: number;
+  type?: 'gas';
+}
+
+export interface ProvenanceResult {
+  available: boolean;
+  clean_path_attribution: number;
+  raw_terminal_attribution: number;
+  terminal_breakdown: Record<TerminalState, number>;
+  path_integrity: PathIntegrity;
+  hops_to_severance: number | null;
+  label_coverage: number;
+  signals_fired: string[];
+  reason_codes: string[];
+  confidence: number;
+  chain_id: number | null;
+  corpus_version: string | null;
+  heuristic_version: string;
+  graph: { nodes: ProvenanceGraphNode[]; edges: ProvenanceGraphEdge[] };
+}
+
 export interface CounterpartyIntelligence {
   counterparty_name: string;
   counterparty_type: CounterpartyType;
@@ -457,6 +498,7 @@ export interface CounterpartyIntelligence {
   reason: string;
   evidence_summary: string;
   missing_evidence_warnings: string[];
+  provenance: ProvenanceResult | null;
 }
 
 export interface MixerSignalResult {

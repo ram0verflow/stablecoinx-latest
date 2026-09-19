@@ -153,6 +153,10 @@ class PaymentCreate(BaseModel):
     route_provenance_confidence: Optional[str] = Field(None, alias="routeProvenanceConfidence")
     route_evidence_notes: Optional[str] = Field(None, alias="routeEvidenceNotes")
 
+    # Dev-only — selects a canned provenance_service fixture (good/medium/
+    # bad/deceptive) in place of live traversal, which isn't wired yet.
+    provenance_fixture: Optional[str] = Field(None, alias="provenanceFixture")
+
     @root_validator(skip_on_failure=True)
     def validate_wallet_formats(cls, values: dict) -> dict:
         import re

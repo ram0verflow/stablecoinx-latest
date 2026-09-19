@@ -20,6 +20,7 @@ from app.models.treasury_controls import TreasuryDepartmentBudget, ApprovedVendo
 from app.models.treasury_policy import TreasuryPolicy
 from app.models.issuer_profiles import IssuerProfile
 from app.services.compliance.counterparty_risk_service import evaluate_counterparty
+from app.services.compliance.provenance_service import analyze_provenance
 
 
 def _ai_reasoning(seed: str) -> str:
@@ -334,7 +335,8 @@ def seed_db():
             ("Germany Treasury GmbH", "UAE Capital Desk", "Germany", "UAE", Decimal("180000"), "USDC", "Treasury Transfer", PaymentStatus.executed, "Base Sepolia", "Base Sepolia", "direct_transfer", FinalDecision.approved),
             ("USA Risk Sender", "Iran Counterparty", "USA", "Iran", Decimal("4000"), "USDC", "Supplier Payment", PaymentStatus.blocked, "Base Sepolia", "Tron", "block", FinalDecision.blocked),
             ("SG FastPay", "UAE Merchant", "SG", "UAE", Decimal("500"), "USDC", "Supplier Payment", PaymentStatus.approved, "Base Sepolia", "Base Sepolia", "direct_transfer", FinalDecision.approved),
-            ("SG Mega Treasury", "USA Prime Capital", "SG", "USA", Decimal("1000000"), "USDC", "Treasury Transfer", PaymentStatus.under_review, "Tron", "Base Sepolia", "split_payment", FinalDecision.pending_review),
+            ("SG Mega Treasury", "USA Prime Capital", "SG", "USA", Decimal("1000000"), "USDC", "Treasury Transfer", PaymentStatus.approved, "Tron", "Base Sepolia", "alternate_chain", FinalDecision.approved),
+            ("UK Treasury Desk", "Meridian Capital Partners", "UK", "Switzerland", Decimal("92000"), "USDC", "Treasury Transfer", PaymentStatus.under_review, "Base Sepolia", "Ethereum Mainnet", "manual_review", FinalDecision.pending_review),
         ]
 
         # Every seeded payment carries REAL, live, verified wallet addresses
@@ -369,6 +371,7 @@ def seed_db():
             8: {"sender_wallet": _BASE_C, "receiver_wallet": _TRON_A},
             9: {"sender_wallet": _BASE_F, "receiver_wallet": _BASE_E},
             10: {"sender_wallet": _TRON_A, "receiver_wallet": _BASE_D},
+            11: {"sender_wallet": _BASE_C, "receiver_wallet": _BASE_D},
         }
 
         # Counterparty Intelligence overrides — three of these are the
@@ -380,7 +383,7 @@ def seed_db():
             1: (0.15, "low", False), 2: (0.40, "medium", False), 3: (0.15, "low", False),
             4: (0.92, "critical", False), 5: (0.15, "low", False), 6: (0.12, "low", False),
             7: (0.15, "low", False), 8: (0.92, "critical", True), 9: (0.15, "low", False),
-            10: (0.40, "medium", True),
+            10: (0.40, "medium", True), 11: (0.30, "medium", False),
         }
         COUNTERPARTY_OVERRIDES = {
             1: dict(counterparty_type="vendor", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
@@ -421,7 +424,7 @@ def seed_db():
                     origin_tx_visibility="present", destination_tx_visibility="present",
                     route_trace_completeness="full", route_provenance_confidence="high",
                     route_evidence_notes="Cross-chain settlement via Relay chain-swap; origin tx, destination tx, and quote reference all verified.",
-                    sanctions_hit=False),
+                    sanctions_hit=False, provenance_fixture="good"),
             7: dict(counterparty_type="treasury", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
                     route_type="direct", route_provider="Manual", source_wallet_visibility="visible",
                     origin_tx_visibility="present", destination_tx_visibility="present",
@@ -435,21 +438,35 @@ def seed_db():
                     origin_tx_visibility="missing", destination_tx_visibility="missing",
                     route_trace_completeness="opaque", route_provenance_confidence="low",
                     route_evidence_notes="Source wallet hidden, relayer unknown, no quote/order id — only payout visible. Sanctioned corridor (Iran).",
-                    sanctions_hit=True),
+                    sanctions_hit=True, provenance_fixture="bad"),
             9: dict(counterparty_type="vendor", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
                     route_type="direct", route_provider="Manual", source_wallet_visibility="visible",
                     origin_tx_visibility="present", destination_tx_visibility="present",
                     route_trace_completeness="full", route_provenance_confidence="high",
                     route_evidence_notes="Small verified merchant settlement, full route evidence.",
                     sanctions_hit=False),
-            # HEADLINE MEDIUM JOURNEY — liquidity provider, KYB pending,
-            # cross-chain private relay with partial provenance, no hard hit.
+            # HEADLINE MEDIUM JOURNEY — opaque but not risky. 38% of inbound
+            # funding traces to a mint, 44% dead-ends at an exchange omnibus,
+            # 14% arrives via an intent-protocol solver fill. Custodial and
+            # infrastructure opacity are not risk signals on their own —
+            # this is the fixture that proves the tool knows opacity != risk.
             10: dict(counterparty_type="liquidity_provider", counterparty_kyb_status="pending", counterparty_kyb_provider="beeceptor",
-                     route_type="private_relay", route_provider="Relay", source_wallet_visibility="partial",
+                     route_type="relay", route_provider="Relay", source_wallet_visibility="partial",
                      origin_tx_visibility="missing", destination_tx_visibility="present",
                      route_trace_completeness="partial", route_provenance_confidence="medium",
-                     route_evidence_notes="Destination transaction visible; origin wallet and relay route only partially traceable through a private relay.",
-                     sanctions_hit=False),
+                     route_evidence_notes="38% of inbound funding traces to a mint, 44% dead-ends at an exchange omnibus (reachable via Travel Rule), 14% arrives via a solver fill. Custodial/infra opacity is not a risk signal on its own.",
+                     sanctions_hit=False, provenance_fixture="medium"),
+            # HEADLINE DECEPTIVE JOURNEY — the acceptance-test case. Looks
+            # clean on paper (KYB verified, raw terminal is a real mint) but
+            # the funding path itself is a seven-hop disposable-wallet
+            # layering chain. Proves the two-axis model actually gates on
+            # path integrity, not just where the trail eventually ends.
+            11: dict(counterparty_type="liquidity_provider", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
+                     route_type="chain_swap", route_provider="Relay", source_wallet_visibility="partial",
+                     origin_tx_visibility="present", destination_tx_visibility="present",
+                     route_trace_completeness="full", route_provenance_confidence="high",
+                     route_evidence_notes="Raw terminal resolves to a real issuer mint at depth 8 — but the path there is a disposable-wallet layering chain. See Provenance & Path Integrity below.",
+                     sanctions_hit=False, provenance_fixture="deceptive"),
         }
 
         seeded_payments: list[PaymentIntent] = []
@@ -481,6 +498,7 @@ def seed_db():
                 route_trace_completeness=cp.get("route_trace_completeness", "opaque"),
                 route_provenance_confidence=cp.get("route_provenance_confidence", "low"),
                 route_evidence_notes=cp.get("route_evidence_notes"),
+                provenance_fixture=cp.get("provenance_fixture"),
             )
             if not existing:
                 existing = PaymentIntent(
@@ -513,6 +531,7 @@ def seed_db():
                 or existing.receiver_wallet != receiver_wallet
                 or existing.status != status
                 or existing.counterparty_type != counterparty_fields["counterparty_type"]
+                or existing.provenance_fixture != counterparty_fields["provenance_fixture"]
             ):
                 # Backfill chain/wallet/counterparty corrections onto an
                 # already-seeded row without touching its id or history.
@@ -530,7 +549,15 @@ def seed_db():
             wallet_risk_score, wallet_overall_risk, wallet_mixer_adjacent = WALLET_RISK_OVERRIDES.get(i, (0.4, "medium", False))
             wallet_risk_result = {"risk_score": wallet_risk_score, "overall_risk": wallet_overall_risk, "mixer_adjacent": wallet_mixer_adjacent}
             compliance_stub = {"sanctions_hit": cp.get("sanctions_hit", False), "internal_blacklist_hit": False}
-            counterparty_risk_result = evaluate_counterparty(existing, wallet_risk_result, compliance_stub)
+            provenance_result = analyze_provenance(existing, wallet_risk_result, compliance_stub)
+            counterparty_risk_result = evaluate_counterparty(existing, wallet_risk_result, compliance_stub, provenance_result)
+            if provenance_result.get("available"):
+                # Same write-back the live pipeline does — provenance
+                # supersedes the manually-set route_* fields once available.
+                existing.route_type = counterparty_risk_result["route_type"]
+                existing.route_trace_completeness = counterparty_risk_result["route_trace_completeness"]
+                existing.route_provenance_confidence = counterparty_risk_result["route_provenance_confidence"]
+                db.commit()
 
             existing_decision = db.query(ComplianceDecision).filter(ComplianceDecision.payment_id == existing.id).first()
             if not existing_decision:

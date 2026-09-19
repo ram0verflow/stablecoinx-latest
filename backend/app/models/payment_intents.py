@@ -62,6 +62,12 @@ class PaymentIntent(Base):
     route_provenance_confidence = Column(String(16), nullable=True)  # high | medium | low
     route_evidence_notes = Column(Text, nullable=True)
 
+    # Dev-only: selects a canned provenance_service fixture (good/medium/bad/
+    # deceptive) instead of live Neo4j/Etherscan traversal. Live traversal
+    # isn't wired yet (see provenance_service.py); this is how the demo and
+    # the seed data drive real provenance analysis deterministically.
+    provenance_fixture = Column(String(32), nullable=True)
+
     urgency = Column(String(20), nullable=False, default="medium")
     intent_hash = Column(String(64), nullable=True, index=True)
     executed_at = Column(DateTime(timezone=True), nullable=True)

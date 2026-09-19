@@ -45,6 +45,17 @@ export const Login: React.FC = () => {
     try {
       const { data } = await authApi.login({ email: loginEmail, password: loginPassword });
 
+      // A 2xx response body that isn't the expected shape (e.g. a
+      // cold-starting backend on Render's free tier returning something
+      // other than real JSON on the very first request after idling) must
+      // not crash with a raw "Cannot read properties of undefined" — show
+      // a clear, actionable message instead.
+      if (!data || typeof data !== 'object' || !data.user || !data.access_token) {
+        throw new Error(
+          'Login response was incomplete — the server may still be starting up (this can take up to a minute after being idle). Please try again in a few seconds.'
+        );
+      }
+
       supabase.auth.signInWithPassword({ email: loginEmail, password: loginPassword })
         .then(({ error: sbError }) => { if (sbError) console.warn('Supabase auth warning:', sbError.message); })
         .catch((err) => console.warn('Supabase auth error:', err));

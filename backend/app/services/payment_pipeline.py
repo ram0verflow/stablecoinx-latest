@@ -19,6 +19,7 @@ from app.services.governance.country_policy_service import check_corridor
 from app.services.governance.treasury_controls_service import check_treasury_controls
 from app.services.compliance.compliance_engine import run_compliance_checks
 from app.services.compliance.wallet_graph_service import analyze_wallet
+from app.services.compliance.provenance_service import analyze_provenance
 from app.services.compliance.counterparty_risk_service import evaluate_counterparty
 from app.services.compliance.issuer_risk_service import get_issuer_risk
 from app.services.governance.chain_governance_service import check_chain
@@ -104,7 +105,20 @@ def run_payment_pipeline(db: Session, payment_id: UUID) -> dict | None:
         payment.counterparty_kyb_status = _kyc_status_to_kyb_status(compliance.get("kyb_status") or compliance.get("kyc_status"))
         payment.counterparty_kyb_provider = compliance.get("provider_name") if compliance.get("provider_name") == "beeceptor" else "manual"
 
-    counterparty_risk = evaluate_counterparty(payment, wallet_graph, compliance)
+    # Provenance & path-integrity — soft-fails to an UNRESOLVED/DEGRADED
+    # result when no fixture is selected and no live traversal backend is
+    # reachable yet (see provenance_service.py); never blocks the pipeline.
+    provenance = analyze_provenance(payment, wallet_graph, compliance)
+    pipeline_results["provenance"] = provenance
+
+    counterparty_risk = evaluate_counterparty(payment, wallet_graph, compliance, provenance)
+
+    # Provenance (when available) is a direct, richer read of route
+    # transparency — populate the existing route_* columns from it instead
+    # of leaving them at whatever was set at payment-creation time.
+    payment.route_type = counterparty_risk["route_type"]
+    payment.route_trace_completeness = counterparty_risk["route_trace_completeness"]
+    payment.route_provenance_confidence = counterparty_risk["route_provenance_confidence"]
     pipeline_results["counterparty_risk"] = counterparty_risk
 
     # Step 6: Stablecoin Issuer Risk

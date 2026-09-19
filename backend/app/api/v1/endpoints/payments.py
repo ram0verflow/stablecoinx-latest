@@ -112,6 +112,7 @@ def create_payment(  # FIXED: S3
         route_trace_completeness=payment_in.route_trace_completeness,
         route_provenance_confidence=payment_in.route_provenance_confidence,
         route_evidence_notes=payment_in.route_evidence_notes,
+        provenance_fixture=payment_in.provenance_fixture,
         intent_hash=intent_hash,
         created_by=current_user.id
     )
@@ -256,6 +257,7 @@ def build_counterparty_intelligence(payment: PaymentIntent, decision) -> dict:
         "reason": risk.get("reason", ""),
         "evidence_summary": risk.get("evidence_summary", ""),
         "missing_evidence_warnings": missing_evidence,
+        "provenance": risk.get("provenance"),
     }
 
 

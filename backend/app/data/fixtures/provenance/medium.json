@@ -1,0 +1,92 @@
+{
+  "target_address": "0x2aeafa40722764619e3ad096355c30b00582b2e9",
+  "chain_id": 1,
+  "corpus_version": "2026-09-19",
+  "heuristic_version": "1.0.0",
+  "note": "Liquidity counterparty funding inventory \u2014 opaque but not risky.",
+  "branches": [
+    {
+      "value_share": 0.38,
+      "path": [
+        {
+          "address": "0x2aeafa40722764619e3ad096355c30b00582b2e9",
+          "depth": 0
+        },
+        {
+          "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "depth": 1,
+          "label": {
+            "class": "ISSUER_MINT",
+            "entity": "Circle",
+            "source": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+            "confidence": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "value_share": 0.44,
+      "path": [
+        {
+          "address": "0x2aeafa40722764619e3ad096355c30b00582b2e9",
+          "depth": 0
+        },
+        {
+          "address": "0x16ae884d1ee0f56a0367abc08a2402c779338205",
+          "depth": 2,
+          "label": {
+            "class": "VASP_OMNIBUS",
+            "entity": "Demo Exchange Omnibus (fixture)",
+            "source": "fixture_demo_only",
+            "confidence": 0.9
+          }
+        }
+      ]
+    },
+    {
+      "value_share": 0.14,
+      "path": [
+        {
+          "address": "0x2aeafa40722764619e3ad096355c30b00582b2e9",
+          "depth": 0
+        },
+        {
+          "address": "0x5d847053fefb4324860c1caa95b81dea8cd9b523",
+          "depth": 1,
+          "label": {
+            "class": "SOLVER",
+            "entity": "Across Protocol Solver (fixture)",
+            "source": "fixture_demo_only",
+            "confidence": 0.85
+          }
+        }
+      ]
+    },
+    {
+      "value_share": 0.04,
+      "path": [
+        {
+          "address": "0x2aeafa40722764619e3ad096355c30b00582b2e9",
+          "depth": 0
+        },
+        {
+          "address": "0xd953aad9f42546b79ea4732eb9b082877a8db535",
+          "depth": 2,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 525600,
+            "terminal_nonce": 340,
+            "residual_balance_frac": 0.31,
+            "dwell_seconds": 604800
+          },
+          "gas_funder": {
+            "address": "0x6bdbf7f2c9b0648d70c5a1c03b3a3f09b099ed2e",
+            "label": null,
+            "fan_out_count": 2
+          },
+          "value_conservation": 0.96
+        }
+      ]
+    }
+  ]
+}

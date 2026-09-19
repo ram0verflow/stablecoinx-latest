@@ -1,0 +1,112 @@
+{
+  "target_address": "0x7aa0dbdeff6f1368cbf302120929723913a4af82",
+  "chain_id": 1,
+  "corpus_version": "2026-09-19",
+  "heuristic_version": "1.0.0",
+  "note": "Acceptance-test fixture: raw terminal is a real, clean Circle mint at depth 8. If this comes back approved with a green graph, the classifier is reading terminals only and the two-axis model is not wired.",
+  "branches": [
+    {
+      "value_share": 1.0,
+      "path": [
+        {
+          "address": "0x7aa0dbdeff6f1368cbf302120929723913a4af82",
+          "depth": 0
+        },
+        {
+          "address": "0x511959c0ccd255338da93e10e73cda365c052f53",
+          "depth": 1,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 12,
+            "terminal_nonce": 2,
+            "residual_balance_frac": 0.0,
+            "dwell_seconds": 400
+          },
+          "value_conservation": 0.995
+        },
+        {
+          "address": "0x8b1acbae07ebfc821ccfc5e63c26362fb3dd489a",
+          "depth": 2,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 24,
+            "terminal_nonce": 2,
+            "residual_balance_frac": 0.0,
+            "dwell_seconds": 400
+          },
+          "value_conservation": 0.995
+        },
+        {
+          "address": "0x90b76dac5382f687194984e0c5155cef4184b516",
+          "depth": 3,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 36,
+            "terminal_nonce": 2,
+            "residual_balance_frac": 0.0,
+            "dwell_seconds": 400
+          },
+          "value_conservation": 0.995
+        },
+        {
+          "address": "0xea8c65e8bff9425bd35fb2400853a0f525ac5c4b",
+          "depth": 4,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 48,
+            "terminal_nonce": 2,
+            "residual_balance_frac": 0.0,
+            "dwell_seconds": 400
+          },
+          "value_conservation": 0.995
+        },
+        {
+          "address": "0x98fed15e6c4bd8f3ff9033b26350f44e83351557",
+          "depth": 5,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 60,
+            "terminal_nonce": 2,
+            "residual_balance_frac": 0.0,
+            "dwell_seconds": 400
+          },
+          "value_conservation": 0.995
+        },
+        {
+          "address": "0x460091d8d482a7f63a41f9e8749ba9e9ad543622",
+          "depth": 6,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 72,
+            "terminal_nonce": 45,
+            "residual_balance_frac": 0.15,
+            "dwell_seconds": 1400
+          },
+          "value_conservation": 0.995
+        },
+        {
+          "address": "0x3b0a26d0295cedb47daa186213e8ef5a9c2881e8",
+          "depth": 7,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 84,
+            "terminal_nonce": 45,
+            "residual_balance_frac": 0.15,
+            "dwell_seconds": 1400
+          },
+          "value_conservation": 0.995
+        },
+        {
+          "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "depth": 8,
+          "label": {
+            "class": "ISSUER_MINT",
+            "entity": "Circle",
+            "source": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+            "confidence": 1.0
+          }
+        }
+      ]
+    }
+  ]
+}

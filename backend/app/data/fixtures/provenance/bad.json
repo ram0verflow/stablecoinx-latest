@@ -1,0 +1,62 @@
+{
+  "target_address": "0xab946d24f459cc313370ed9afaa75b71268f3928",
+  "chain_id": 1,
+  "corpus_version": "2026-09-19",
+  "heuristic_version": "1.0.0",
+  "note": "Unknown counterparty \u2014 layering chain terminating at a labeled privacy pool.",
+  "branches": [
+    {
+      "value_share": 1.0,
+      "path": [
+        {
+          "address": "0xab946d24f459cc313370ed9afaa75b71268f3928",
+          "depth": 0
+        },
+        {
+          "address": "0x128c8b7786015552cc3b7bd70d9a0e1f10be1677",
+          "depth": 1,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 40,
+            "terminal_nonce": 2,
+            "residual_balance_frac": 0.0,
+            "dwell_seconds": 300
+          },
+          "gas_funder": {
+            "address": "0xf6f74e10c3294d1fa9c8b026b5d7779a491a1e8b",
+            "label": null,
+            "fan_out_count": 12
+          },
+          "value_conservation": 0.998
+        },
+        {
+          "address": "0xc7bc92a553dcd438045dfd1170d21d8f58f8a31f",
+          "depth": 2,
+          "label": null,
+          "lifecycle": {
+            "first_seen_minutes_ago": 55,
+            "terminal_nonce": 1,
+            "residual_balance_frac": 0.0,
+            "dwell_seconds": 180
+          },
+          "gas_funder": {
+            "address": "0xf6f74e10c3294d1fa9c8b026b5d7779a491a1e8b",
+            "label": null,
+            "fan_out_count": 12
+          },
+          "value_conservation": 0.997
+        },
+        {
+          "address": "0xe21ada8186fa9bd365d51caec59155b32526cae1",
+          "depth": 3,
+          "label": {
+            "class": "PRIVACY",
+            "entity": "Demo Privacy Pool (fixture)",
+            "source": "fixture_demo_only",
+            "confidence": 0.95
+          }
+        }
+      ]
+    }
+  ]
+}

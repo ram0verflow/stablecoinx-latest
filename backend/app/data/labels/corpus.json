@@ -1,0 +1,14 @@
+{
+  "version": "2026-09-19",
+  "note": "Only the ISSUER_MINT entry below is a primary-source-verified real address. Every other entry is a fixture_demo_only placeholder used solely to drive the four canned provenance fixtures — none of them are real bridges/VASPs/pools and must never be treated as production sanctions or infrastructure data. Production use needs a commercial corpus (Chainalysis, TRM, Elliptic, Range) plus a live OFAC SDN feed; label coverage on L2s and alt-VMs is thinner than on mainnet, so coverage is reported per chain rather than as a single global number.",
+  "entries": [
+    {
+      "chain_id": 1,
+      "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "class": "ISSUER_MINT",
+      "entity": "Circle",
+      "source": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+      "confidence": 1.0
+    }
+  ]
+}
