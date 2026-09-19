@@ -34,8 +34,12 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/v1/health
     envVars:
+      # "demo" (not "production") is deliberate: it's the gate seed_db()
+      # checks (see app/db/seed.py / app/main.py's _startup_seed_and_graph)
+      # — without it, a fresh Render Postgres boots with zero users, so
+      # even the login page's own advertised demo accounts wouldn't exist.
       - key: APP_ENV
-        value: production
+        value: demo
       - key: ENVIRONMENT
         value: production
       - key: BACKEND_PORT

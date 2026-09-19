@@ -24,11 +24,15 @@ def _startup_seed_and_graph() -> None:
     try:
         from app.db.database import Base, engine as db_engine
 
-        if settings.DATABASE_URL.startswith("sqlite"):
-            Base.metadata.create_all(bind=db_engine)
-            log.info("SQLite schema created (create_all)")
+        # Alembic's migration history (backend/alembic/versions) predates
+        # most of this schema and was never kept current, so it can't be
+        # relied on for a fresh deploy. create_all() only creates tables
+        # that don't exist yet — safe to run unconditionally (Postgres
+        # included) rather than only for local SQLite.
+        Base.metadata.create_all(bind=db_engine)
+        log.info("Database schema created/verified (create_all)")
     except Exception as exc:
-        log.warning("SQLite schema create skipped: %s", exc)
+        log.warning("Schema create skipped: %s", exc)
     try:
         seed_neo4j()
     except Exception as exc:

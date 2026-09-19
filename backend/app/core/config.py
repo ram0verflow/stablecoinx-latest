@@ -181,30 +181,30 @@ class Settings(BaseSettings):  # FIXED: C3
         return [o.strip() for o in primary.split(",") if o.strip()]  # FIXED: S2
 
     def validate_config(self) -> None:  # FIXED: C3
+        # Only structural settings that render.yaml (or any deploy target)
+        # always supplies a real, non-blank value for belong here. Supabase,
+        # Groq, the settlement wallet key and the four contract addresses
+        # are deliberately `sync: false` placeholders a deployer fills in
+        # after the first boot — every feature that depends on them already
+        # degrades gracefully per-request when they're blank (Groq ->
+        # manual_review fallback, execution orchestrator -> honest
+        # ExecutionError), so requiring them here would crash the entire
+        # app before that graceful-degradation logic ever runs.
         required = [  # FIXED: C3
             "DATABASE_URL",  # FIXED: C3
             "REDIS_URL",  # FIXED: C3
             "JWT_SECRET_KEY",  # FIXED: C3
-            "SUPABASE_URL",  # FIXED: C3
-            "SUPABASE_ANON_KEY",  # FIXED: C3
-            "SUPABASE_SERVICE_KEY",  # FIXED: C3
             "OLLAMA_BASE_URL",  # FIXED: C3
             "OLLAMA_MODEL",  # FIXED: C3
-            "GROQ_API_KEY",  # FIXED: C3
             "GROQ_MODEL",  # FIXED: C3
             "NEO4J_URI",  # FIXED: C3
             "NEO4J_USER",  # FIXED: C3
             "NEO4J_PASSWORD",  # FIXED: C3
             "TELEGRAM_BOT_TOKEN",  # FIXED: C3
             "TELEGRAM_CHAT_ID",  # FIXED: C3
-            "BACKEND_WALLET_PRIVATE_KEY",  # FIXED: C3
             "CONTRACT_ABI_PATH",  # FIXED: C3
             "BASE_SEPOLIA_CHAIN_ID",  # FIXED: C3
             "BASE_SEPOLIA_RPC_URL",  # FIXED: C3
-            "CONTRACT_ADDRESS_SETTLEMENT",  # FIXED: C3
-            "CONTRACT_ADDRESS_COMPLIANCE",  # FIXED: C3
-            "CONTRACT_ADDRESS_TREASURY",  # FIXED: C3
-            "CONTRACT_ADDRESS_REGISTRY",  # FIXED: C3
             "APP_ENV",  # FIXED: C3
         ]  # FIXED: C3
         missing = [k for k in required if not str(getattr(self, k, "") or "").strip()]  # FIXED: C3
