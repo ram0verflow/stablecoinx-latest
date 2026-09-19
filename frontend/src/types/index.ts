@@ -374,6 +374,39 @@ export interface MixerRecentTransaction {
   amount_wei?: string | null;
 }
 
+export interface PolicyTeam {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface TeamPolicyResponse {
+  team_id: string;
+  yaml_text: string;
+  version: number;
+  rule_count: number;
+  is_deployed: boolean;
+  deployed_at?: string | null;
+  n8n_deploy_status?: string | null;
+  n8n_deploy_detail?: string | null;
+}
+
+export interface PolicyEvaluatedRule {
+  name: string;
+  description: string;
+  priority: number;
+  action: string;
+  matched: boolean;
+}
+
+export interface PolicyEvaluateResult {
+  matched: boolean;
+  matched_rule: string | null;
+  action: string;
+  evaluated_rules: PolicyEvaluatedRule[];
+  payment: Record<string, unknown>;
+}
+
 export interface MixerSignalResult {
   available: boolean;
   chain: string;

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ToastProvider';
 import { authApi, monitoringApi } from '../lib/api';
+import { PolicyEngineSettings } from '../components/PolicyEngineSettings';
 
 interface UserRow { id: string; email: string; role: string; is_active: boolean }
 
@@ -13,7 +14,7 @@ const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin', treasury_officer: 'Treasury', compliance_officer: 'Compliance', reviewer: 'Reviewer', auditor: 'Auditor',
 };
 
-const NAV_ITEMS = ['Organization', 'Users & Roles', 'Approval Controls', 'Security', 'Environment', 'Notifications'];
+const NAV_ITEMS = ['Organization', 'Users & Roles', 'Policy Engine', 'Approval Controls', 'Security', 'Environment', 'Notifications'];
 
 export const Settings: React.FC = () => {
   const { user, role, setWallet, updatePreference, token: authToken } = useAuthStore();
@@ -107,6 +108,8 @@ export const Settings: React.FC = () => {
               </div>
             </>
           )}
+
+          {nav === 'Policy Engine' && <PolicyEngineSettings />}
 
           {nav === 'Security' && (
             <>

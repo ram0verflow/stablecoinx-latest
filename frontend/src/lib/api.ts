@@ -10,6 +10,9 @@ import type {
   ObfuscationDemoPoolResponse,
   ObfuscationValidationSnapshot,
   MixerSignalResult,
+  PolicyTeam,
+  TeamPolicyResponse,
+  PolicyEvaluateResult,
 } from '../types';
 import { getStoredToken, removeStoredAuth } from './authStorage'; // FIXED: A5
 import { useAuthStore } from '../store/authStore'; // FIXED: A5 — clear Zustand on 401
@@ -146,6 +149,20 @@ export const obfuscationApi = {
 export const mixerSignalsApi = {
   analyze: (address: string, chain: string) =>
     api.get<MixerSignalResult>('/mixer-signals/analyze', { params: { address, chain } }),
+};
+
+export const policyEngineApi = {
+  listTeams: () => api.get<PolicyTeam[]>('/policy-engine/teams'),
+  createTeam: (name: string, slug: string) => api.post<PolicyTeam>('/policy-engine/teams', { name, slug }),
+  getPolicy: (teamId: string) => api.get<TeamPolicyResponse>(`/policy-engine/teams/${teamId}/policy`),
+  savePolicy: (teamId: string, yamlText: string) =>
+    api.put<TeamPolicyResponse>(`/policy-engine/teams/${teamId}/policy`, { yaml_text: yamlText }),
+  deployPolicy: (teamId: string) => api.post<TeamPolicyResponse>(`/policy-engine/teams/${teamId}/policy/deploy`),
+  evaluate: (teamId: string, opts: { paymentId?: string; payment?: Record<string, unknown> }) =>
+    api.post<PolicyEvaluateResult>(`/policy-engine/teams/${teamId}/policy/evaluate`, {
+      payment_id: opts.paymentId,
+      payment: opts.payment,
+    }),
 };
 
 export default api;

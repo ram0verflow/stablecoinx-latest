@@ -238,6 +238,77 @@ def _seed_issuer_profiles(db) -> None:
             db.commit()
 
 
+_DEMO_TEAM_POLICIES = {
+    "acme-treasury": (
+        "Acme Treasury",
+        """team: acme-treasury
+version: 1
+rules:
+  - name: block-sanctioned-corridor
+    description: Block payments into sanctioned jurisdictions regardless of amount
+    priority: 100
+    when:
+      destination_country: [Iran, "North Korea", Russia]
+    action: block
+
+  - name: enhanced-review-large-usdt
+    description: Escalate large USDT transfers for manual review
+    priority: 50
+    when:
+      token: USDT
+      amount_gt: 100000
+    action: enhanced_review
+
+  - name: flag-tron-settlement
+    description: Flag any payment settling on Tron for extra scrutiny
+    priority: 10
+    when:
+      chain_in: [Tron]
+    action: enhanced_review
+""",
+    ),
+    "nimbus-payments": (
+        "Nimbus Payments",
+        """team: nimbus-payments
+version: 1
+rules:
+  - name: dual-approval-large-treasury
+    description: Require dual approval on treasury transfers over 250k
+    priority: 80
+    when:
+      purpose: "Treasury Transfer"
+      amount_gt: 250000
+    action: require_dual_approval
+
+  - name: block-sanctioned-corridor
+    description: Block payments into sanctioned jurisdictions
+    priority: 100
+    when:
+      destination_country: [Iran, "North Korea"]
+    action: block
+""",
+    ),
+}
+
+
+def _seed_teams(db) -> None:
+    from app.models.team_policies import TeamPolicy
+    from app.models.teams import Team
+
+    for slug, (name, yaml_text) in _DEMO_TEAM_POLICIES.items():
+        team = db.query(Team).filter(Team.slug == slug).first()
+        if not team:
+            team = Team(name=name, slug=slug)
+            db.add(team)
+            db.commit()
+            db.refresh(team)
+
+        policy = db.query(TeamPolicy).filter(TeamPolicy.team_id == team.id).first()
+        if not policy:
+            db.add(TeamPolicy(team_id=team.id, yaml_text=yaml_text, version=1))
+            db.commit()
+
+
 def seed_db():
     from app.core.config import settings
 
@@ -250,6 +321,7 @@ def seed_db():
         _seed_treasury_controls(db)
         _seed_treasury_policies(db)
         _seed_issuer_profiles(db)
+        _seed_teams(db)
         now = datetime.now(timezone.utc)
         payments_data = [
             ("SG Payroll Corp", "UAE Staffing LLC", "SG", "UAE", Decimal("45000"), "USDC", "Payroll", PaymentStatus.executed, "Base Sepolia", "Base Sepolia", "direct_transfer", FinalDecision.approved),

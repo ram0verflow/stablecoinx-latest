@@ -12,6 +12,8 @@ from app.models.wallet_risk_cache import WalletRiskCache
 from app.models.treasury_controls import TreasuryDepartmentBudget, ApprovedVendor
 from app.models.issuer_profiles import IssuerProfile
 from app.models.treasury_policy import TreasuryPolicy
+from app.models.teams import Team
+from app.models.team_policies import TeamPolicy
 
 __all__ = [
     "User", "UserRole",
@@ -26,4 +28,6 @@ __all__ = [
     "TreasuryDepartmentBudget", "ApprovedVendor",
     "IssuerProfile",
     "TreasuryPolicy",
+    "Team",
+    "TeamPolicy",
 ]
