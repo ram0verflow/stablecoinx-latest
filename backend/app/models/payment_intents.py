@@ -37,6 +37,31 @@ class PaymentIntent(Base):
     purpose = Column(String(255), nullable=False)
     sender_wallet = Column(String(42), nullable=True)
     receiver_wallet = Column(String(42), nullable=True)
+
+    # Counterparty intelligence — the enterprise's own settlement authorization
+    # is what we gate; these describe the external counterparty and the
+    # transparency of the route funds take to reach them. All nullable so
+    # legacy payments (created before this model) fall back gracefully
+    # rather than pretending sender/receiver framing was correct.
+    counterparty_name = Column(String(255), nullable=True)
+    counterparty_type = Column(String(32), nullable=True)  # vendor | liquidity_provider | exchange | treasury | unknown
+    counterparty_wallet_address = Column(String(64), nullable=True)
+    counterparty_chain = Column(String(100), nullable=True)
+    counterparty_kyb_status = Column(String(16), nullable=True)  # verified | pending | missing | failed
+    counterparty_kyb_provider = Column(String(32), nullable=True)  # beeceptor | manual | none
+    counterparty_attestation_id = Column(String(128), nullable=True)
+
+    # Route / provenance evidence — classifies what we can observe about
+    # the settlement route, never claims to deanonymize a private relay.
+    route_type = Column(String(32), nullable=True)  # direct | public_bridge | relay | private_relay | chain_swap
+    route_provider = Column(String(64), nullable=True)
+    source_wallet_visibility = Column(String(16), nullable=True)  # visible | partial | hidden | unknown
+    destination_tx_visibility = Column(String(16), nullable=True)  # present | missing
+    origin_tx_visibility = Column(String(16), nullable=True)  # present | missing
+    route_trace_completeness = Column(String(16), nullable=True)  # full | partial | opaque
+    route_provenance_confidence = Column(String(16), nullable=True)  # high | medium | low
+    route_evidence_notes = Column(Text, nullable=True)
+
     urgency = Column(String(20), nullable=False, default="medium")
     intent_hash = Column(String(64), nullable=True, index=True)
     executed_at = Column(DateTime(timezone=True), nullable=True)

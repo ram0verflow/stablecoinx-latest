@@ -97,6 +97,21 @@ def create_payment(  # FIXED: S3
         urgency=payment_in.urgency,
         sender_wallet=payment_in.sender_wallet,
         receiver_wallet=payment_in.receiver_wallet,
+        counterparty_name=payment_in.counterparty_name,
+        counterparty_type=payment_in.counterparty_type,
+        counterparty_wallet_address=payment_in.counterparty_wallet_address,
+        counterparty_chain=payment_in.counterparty_chain,
+        counterparty_kyb_status=payment_in.counterparty_kyb_status,
+        counterparty_kyb_provider=payment_in.counterparty_kyb_provider,
+        counterparty_attestation_id=payment_in.counterparty_attestation_id,
+        route_type=payment_in.route_type,
+        route_provider=payment_in.route_provider,
+        source_wallet_visibility=payment_in.source_wallet_visibility,
+        destination_tx_visibility=payment_in.destination_tx_visibility,
+        origin_tx_visibility=payment_in.origin_tx_visibility,
+        route_trace_completeness=payment_in.route_trace_completeness,
+        route_provenance_confidence=payment_in.route_provenance_confidence,
+        route_evidence_notes=payment_in.route_evidence_notes,
         intent_hash=intent_hash,
         created_by=current_user.id
     )
@@ -152,6 +167,97 @@ def get_pending_approvals(
     return payments
 
 from app.models.compliance_decisions import ComplianceDecision
+from app.services.compliance.counterparty_risk_service import evaluate_counterparty
+
+COUNTERPARTY_TYPE_LABELS = {
+    "vendor": "Vendor",
+    "liquidity_provider": "Liquidity Provider",
+    "exchange": "Exchange",
+    "treasury": "Treasury",
+    "unknown": "Unknown",
+}
+
+
+def _derive_tx_hash(payment_id: str, salt: str) -> str:
+    return "0x" + hashlib.sha256(f"{payment_id}:{salt}".encode("utf-8")).hexdigest()
+
+
+def build_counterparty_intelligence(payment: PaymentIntent, decision) -> dict:
+    """
+    Single Counterparty Intelligence view — replaces the old two-card
+    sender/receiver wallet analysis. Binds to the canonical counterparty_*/
+    route_* fields; if a payment predates that model (or was created
+    without them), falls back to the receiver_* fields and says so
+    explicitly rather than presenting sender/receiver framing as correct.
+    """
+    wallet_not_configured = not bool(payment.counterparty_wallet_address)
+
+    counterparty_name = payment.counterparty_name or payment.receiver_company
+    counterparty_type = (payment.counterparty_type or "unknown").lower()
+    counterparty_wallet = payment.counterparty_wallet_address or payment.receiver_wallet
+    counterparty_chain = payment.counterparty_chain or payment.destination_chain
+    kyb_status = payment.counterparty_kyb_status or "missing"
+    kyb_provider = payment.counterparty_kyb_provider or "none"
+
+    route_type = payment.route_type or "unknown"
+    route_trace = (payment.route_trace_completeness or "opaque").lower()
+    route_confidence = payment.route_provenance_confidence or "low"
+
+    if decision and decision.counterparty_risk_result:
+        risk = decision.counterparty_risk_result
+    else:
+        compliance_result = (decision.compliance_result if decision else None) or {}
+        wallet_risk_result = (decision.wallet_risk_result if decision else None) or {}
+        risk = evaluate_counterparty(payment, wallet_risk_result, compliance_result)
+
+    missing_evidence = list(risk.get("missing_evidence_warnings", []))
+    if wallet_not_configured:
+        missing_evidence.insert(0, "Counterparty wallet not configured for this payment — showing receiver wallet on file.")
+
+    origin_visible = payment.origin_tx_visibility == "present"
+    destination_visible = payment.destination_tx_visibility == "present"
+
+    return {
+        "counterparty_name": counterparty_name,
+        "counterparty_type": counterparty_type,
+        "counterparty_type_label": COUNTERPARTY_TYPE_LABELS.get(counterparty_type, "Unknown"),
+        "counterparty_wallet": counterparty_wallet,
+        "counterparty_wallet_configured": not wallet_not_configured,
+        "chain": counterparty_chain,
+        "wallet_intelligence": {
+            "address": counterparty_wallet,
+            "chain": counterparty_chain,
+            "score": risk.get("wallet_intelligence_score"),
+            "behavior_signal": risk.get("wallet_behavior_signal", "unknown"),
+            "has_history": risk.get("has_wallet_history", False),
+        },
+        "kyb": {
+            "status": kyb_status,
+            "provider": kyb_provider,
+            "attestation_id": payment.counterparty_attestation_id,
+        },
+        "route_transparency": {
+            "route_type": route_type,
+            "route_provider": payment.route_provider or "Unknown",
+            "origin_chain": payment.source_chain,
+            "destination_chain": payment.destination_chain,
+            "source_wallet_visibility": payment.source_wallet_visibility or "unknown",
+            "origin_tx_hash": _derive_tx_hash(str(payment.id), "origin") if origin_visible else None,
+            "destination_tx_hash": _derive_tx_hash(str(payment.id), "destination") if destination_visible else None,
+            "quote_reference": f"QR-{str(payment.id)[:8].upper()}" if route_trace == "full" else None,
+            "intermediate_contracts_known": route_trace == "full",
+            "trace_completeness": route_trace,
+            "provenance_confidence": route_confidence,
+            "transparency_score": risk.get("route_transparency_score", 0),
+            "notes": payment.route_evidence_notes,
+        },
+        "counterparty_risk_level": risk.get("counterparty_risk_level", "medium"),
+        "policy_action": risk.get("policy_action", "enhanced_review"),
+        "reason": risk.get("reason", ""),
+        "evidence_summary": risk.get("evidence_summary", ""),
+        "missing_evidence_warnings": missing_evidence,
+    }
+
 
 def build_pipeline_stages(decision) -> dict:
     """
@@ -225,7 +331,7 @@ def build_pipeline_stages(decision) -> dict:
             ) if compliance else "CLEAR",
         },
         "layer_4_wallet_risk": {
-            "label": "AI Graph Wallet Risk",
+            "label": "Counterparty Wallet Behavior Signal",
             "passed": wallet.get("overall_risk") not in ("high", "critical") and not wallet.get("mixer_adjacent") and not wallet.get("laundering_cluster"),
             "status": "fail" if wallet.get("overall_risk") in ("high", "critical") else "pass",
             "detail": (
@@ -364,6 +470,7 @@ def read_payment(
         "updated_at": payment.updated_at.isoformat() if payment.updated_at else None,
         "compliance_decision": None,
         "pipeline_stages": build_pipeline_stages(None),
+        "counterparty_intelligence": build_counterparty_intelligence(payment, decision),
     }
     if decision:
         response["compliance_decision"] = {
@@ -376,6 +483,7 @@ def read_payment(
             "treasury_controls_result": decision.treasury_controls_result,
             "compliance_result": decision.compliance_result,
             "wallet_risk_result": decision.wallet_risk_result,
+            "counterparty_risk_result": decision.counterparty_risk_result,
             "issuer_risk_result": decision.issuer_risk_result,
             "chain_governance_result": decision.chain_governance_result,
             "liquidity_result": decision.liquidity_result,

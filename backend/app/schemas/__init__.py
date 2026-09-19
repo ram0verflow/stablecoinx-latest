@@ -133,6 +133,26 @@ class PaymentCreate(BaseModel):
     receiver_wallet: str = Field(..., alias="receiverWallet", min_length=26, max_length=42)
     sender_wallet: Optional[str] = Field(None, alias="senderWallet")
 
+    # Counterparty intelligence — optional at creation time. Payments that
+    # don't set these fall back to receiver_company/receiver_wallet with a
+    # clearly labeled "counterparty wallet not configured" state rather than
+    # pretending sender/receiver framing is the same thing.
+    counterparty_name: Optional[str] = Field(None, alias="counterpartyName")
+    counterparty_type: Optional[str] = Field(None, alias="counterpartyType")
+    counterparty_wallet_address: Optional[str] = Field(None, alias="counterpartyWalletAddress")
+    counterparty_chain: Optional[str] = Field(None, alias="counterpartyChain")
+    counterparty_kyb_status: Optional[str] = Field(None, alias="counterpartyKybStatus")
+    counterparty_kyb_provider: Optional[str] = Field(None, alias="counterpartyKybProvider")
+    counterparty_attestation_id: Optional[str] = Field(None, alias="counterpartyAttestationId")
+    route_type: Optional[str] = Field(None, alias="routeType")
+    route_provider: Optional[str] = Field(None, alias="routeProvider")
+    source_wallet_visibility: Optional[str] = Field(None, alias="sourceWalletVisibility")
+    destination_tx_visibility: Optional[str] = Field(None, alias="destinationTxVisibility")
+    origin_tx_visibility: Optional[str] = Field(None, alias="originTxVisibility")
+    route_trace_completeness: Optional[str] = Field(None, alias="routeTraceCompleteness")
+    route_provenance_confidence: Optional[str] = Field(None, alias="routeProvenanceConfidence")
+    route_evidence_notes: Optional[str] = Field(None, alias="routeEvidenceNotes")
+
     @root_validator(skip_on_failure=True)
     def validate_wallet_formats(cls, values: dict) -> dict:
         import re

@@ -19,6 +19,7 @@ from app.services.governance.country_policy_service import check_corridor
 from app.services.governance.treasury_controls_service import check_treasury_controls
 from app.services.compliance.compliance_engine import run_compliance_checks
 from app.services.compliance.wallet_graph_service import analyze_wallet
+from app.services.compliance.counterparty_risk_service import evaluate_counterparty
 from app.services.compliance.issuer_risk_service import get_issuer_risk
 from app.services.governance.chain_governance_service import check_chain
 from app.services.governance.liquidity_service import compute_best_route
@@ -29,6 +30,18 @@ from app.services.privacy.zk_service import generate_combined_proof
 from app.models.users import User
 
 logger = logging.getLogger(__name__)
+
+
+def _kyc_status_to_kyb_status(kyc_status: str | None) -> str:
+    """Maps compliance_engine's kyc_status vocabulary (verified/missing/
+    expired/unknown) onto the counterparty KYB vocabulary (verified/
+    pending/missing/failed) used by evaluate_counterparty."""
+    return {
+        "verified": "verified",
+        "missing": "missing",
+        "expired": "failed",
+        "unknown": "pending",
+    }.get(kyc_status, "missing")
 
 
 def run_payment_pipeline(db: Session, payment_id: UUID) -> dict | None:
@@ -74,6 +87,26 @@ def run_payment_pipeline(db: Session, payment_id: UUID) -> dict | None:
         wallet_graph = receiver_wallet_result
     pipeline_results["wallet_graph"] = wallet_graph
 
+    # Step 5a: Counterparty Intelligence — combines wallet behavior, route
+    # transparency, KYB/KYC status and hard compliance signals into one
+    # explainable risk level + policy action. Never blended into wallet_graph
+    # itself; this is the enterprise-authorization-layer decision, not a
+    # wallet score.
+    #
+    # counterparty_kyb_status/_provider are only pre-populated for seeded
+    # demo payments. A real payment created through the app has never had
+    # its counterparty KYB requested — the actual KYC/KYB request path is
+    # the `run_compliance_checks()` call above (Beeceptor `/compliance/screen`
+    # or the local deterministic fixtures), which just ran. Backfill from
+    # that real result instead of silently defaulting to "missing" and
+    # never reflecting the check that actually happened.
+    if not payment.counterparty_kyb_status:
+        payment.counterparty_kyb_status = _kyc_status_to_kyb_status(compliance.get("kyb_status") or compliance.get("kyc_status"))
+        payment.counterparty_kyb_provider = compliance.get("provider_name") if compliance.get("provider_name") == "beeceptor" else "manual"
+
+    counterparty_risk = evaluate_counterparty(payment, wallet_graph, compliance)
+    pipeline_results["counterparty_risk"] = counterparty_risk
+
     # Step 6: Stablecoin Issuer Risk
     issuer_risk = get_issuer_risk(db, payment.token)  # FIXED: M5
     pipeline_results["issuer_risk"] = issuer_risk
@@ -105,6 +138,7 @@ def run_payment_pipeline(db: Session, payment_id: UUID) -> dict | None:
         treasury_controls_result=treasury_controls,  # FIXED: M1
         compliance_result=compliance,  # FIXED: M1
         wallet_risk_result=wallet_graph,
+        counterparty_risk_result=counterparty_risk,
         issuer_risk_result=issuer_risk,
         chain_governance_result=chain_governance,
         liquidity_result=liquidity,

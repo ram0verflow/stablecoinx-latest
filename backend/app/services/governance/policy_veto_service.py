@@ -6,8 +6,9 @@ def apply_veto(pipeline_results: dict, ai_decision: str) -> FinalDecision:
     treasury_controls = pipeline_results.get("treasury_controls", {})
     compliance = pipeline_results.get("compliance", {})
     wallet_graph = pipeline_results.get("wallet_graph", {})
+    counterparty_risk = pipeline_results.get("counterparty_risk", {})
     issuer_risk = pipeline_results.get("issuer_risk", {})
-    
+
     # Rules:
     # If country_policy is_allowed=False → BLOCK regardless of AI
     if not country_policy.get("is_allowed", False):
@@ -26,6 +27,13 @@ def apply_veto(pipeline_results: dict, ai_decision: str) -> FinalDecision:
     if compliance.get("provider_status") == "degraded":
         return FinalDecision.pending_review
 
+    # Counterparty Intelligence: failed/missing KYB combined with an opaque
+    # route, or a hard hit surfaced there, blocks settlement authorization
+    # regardless of AI advisory. This does not claim to deanonymize a
+    # private relay — it gates on the evidence we actually have.
+    if counterparty_risk.get("policy_action") == "blocked":
+        return FinalDecision.blocked
+
     # Explicit fail/bypass from treasury controls
     if treasury_controls.get("daily_limit_ok") is False:
         return FinalDecision.blocked
@@ -40,6 +48,13 @@ def apply_veto(pipeline_results: dict, ai_decision: str) -> FinalDecision:
         
     # If wallet risk_score > 0.8 → force REVIEW regardless of AI
     if wallet_graph.get("risk_score", 0.0) > 0.8:
+        return FinalDecision.pending_review
+
+    # Counterparty Intelligence: opaque/private-relay route or unresolved
+    # KYB routes to enhanced review. Privacy-like route behavior is not
+    # treated as guilt — it lowers confidence, it does not prove illicit
+    # activity, so this is a review gate, not a block.
+    if counterparty_risk.get("policy_action") == "enhanced_review":
         return FinalDecision.pending_review
         
     # If dual_approval_required=True → force REVIEW

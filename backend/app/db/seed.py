@@ -19,6 +19,7 @@ from app.models.users import User, UserRole
 from app.models.treasury_controls import TreasuryDepartmentBudget, ApprovedVendor
 from app.models.treasury_policy import TreasuryPolicy
 from app.models.issuer_profiles import IssuerProfile
+from app.services.compliance.counterparty_risk_service import evaluate_counterparty
 
 
 def _ai_reasoning(seed: str) -> str:
@@ -329,9 +330,9 @@ def seed_db():
             ("UK Supplier Hub", "UAE Industrial Buyer", "UK", "UAE", Decimal("12000"), "USDT", "Supplier Payment", PaymentStatus.approved, "Base Sepolia", "Base Sepolia", "alternate_chain", FinalDecision.approved),
             ("USA Export Co", "Russia Components LLC", "USA", "Russia", Decimal("8000"), "USDC", "Supplier Payment", PaymentStatus.blocked, "Base Sepolia", "Base Sepolia", "block", FinalDecision.blocked),
             ("SG Payroll Services", "India Talent Pvt", "SG", "India", Decimal("9500"), "USDC", "Payroll", PaymentStatus.executed, "Base Sepolia", "Base Sepolia", "direct_transfer", FinalDecision.approved),
-            ("UAE Procurement Co", "India Supplier Park", "UAE", "India", Decimal("75000"), "USDC", "Supplier Payment", PaymentStatus.under_review, "Base Sepolia", "Tron", "manual_review", FinalDecision.pending_review),
+            ("UAE Procurement Co", "India Supplier Park", "UAE", "India", Decimal("75000"), "USDC", "Supplier Payment", PaymentStatus.approved, "Base Sepolia", "Tron", "alternate_chain", FinalDecision.approved),
             ("Germany Treasury GmbH", "UAE Capital Desk", "Germany", "UAE", Decimal("180000"), "USDC", "Treasury Transfer", PaymentStatus.executed, "Base Sepolia", "Base Sepolia", "direct_transfer", FinalDecision.approved),
-            ("USA Risk Sender", "Iran Counterparty", "USA", "Iran", Decimal("4000"), "USDC", "Supplier Payment", PaymentStatus.blocked, "Base Sepolia", "Base Sepolia", "block", FinalDecision.blocked),
+            ("USA Risk Sender", "Iran Counterparty", "USA", "Iran", Decimal("4000"), "USDC", "Supplier Payment", PaymentStatus.blocked, "Base Sepolia", "Tron", "block", FinalDecision.blocked),
             ("SG FastPay", "UAE Merchant", "SG", "UAE", Decimal("500"), "USDC", "Supplier Payment", PaymentStatus.approved, "Base Sepolia", "Base Sepolia", "direct_transfer", FinalDecision.approved),
             ("SG Mega Treasury", "USA Prime Capital", "SG", "USA", Decimal("1000000"), "USDC", "Treasury Transfer", PaymentStatus.under_review, "Tron", "Base Sepolia", "split_payment", FinalDecision.pending_review),
         ]
@@ -365,9 +366,90 @@ def seed_db():
             5: {"sender_wallet": _BASE_C, "receiver_wallet": _BASE_F},
             6: {"sender_wallet": _BASE_E, "receiver_wallet": _TRON_B},
             7: {"sender_wallet": _BASE_D, "receiver_wallet": _BASE_C},
-            8: {"sender_wallet": _BASE_C, "receiver_wallet": _BASE_D},
+            8: {"sender_wallet": _BASE_C, "receiver_wallet": _TRON_A},
             9: {"sender_wallet": _BASE_F, "receiver_wallet": _BASE_E},
             10: {"sender_wallet": _TRON_A, "receiver_wallet": _BASE_D},
+        }
+
+        # Counterparty Intelligence overrides — three of these are the
+        # headline demo journeys (good=6, medium=10, bad=8); the rest carry
+        # coherent values so every seeded payment's counterparty card is
+        # internally consistent with its existing status/final_decision
+        # rather than showing "not configured" everywhere.
+        WALLET_RISK_OVERRIDES = {
+            1: (0.15, "low", False), 2: (0.40, "medium", False), 3: (0.15, "low", False),
+            4: (0.92, "critical", False), 5: (0.15, "low", False), 6: (0.12, "low", False),
+            7: (0.15, "low", False), 8: (0.92, "critical", True), 9: (0.15, "low", False),
+            10: (0.40, "medium", True),
+        }
+        COUNTERPARTY_OVERRIDES = {
+            1: dict(counterparty_type="vendor", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
+                    route_type="direct", route_provider="Manual", source_wallet_visibility="visible",
+                    origin_tx_visibility="present", destination_tx_visibility="present",
+                    route_trace_completeness="full", route_provenance_confidence="high",
+                    route_evidence_notes="Same-chain settlement to a verified payroll vendor; full route evidence.",
+                    sanctions_hit=False),
+            2: dict(counterparty_type="treasury", counterparty_kyb_status="pending", counterparty_kyb_provider="beeceptor",
+                    route_type="public_bridge", route_provider="Relay", source_wallet_visibility="partial",
+                    origin_tx_visibility="present", destination_tx_visibility="present",
+                    route_trace_completeness="partial", route_provenance_confidence="medium",
+                    route_evidence_notes="Treasury-to-treasury transfer via public bridge; KYB re-verification pending.",
+                    sanctions_hit=False),
+            3: dict(counterparty_type="vendor", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
+                    route_type="direct", route_provider="Manual", source_wallet_visibility="visible",
+                    origin_tx_visibility="present", destination_tx_visibility="present",
+                    route_trace_completeness="full", route_provenance_confidence="high",
+                    route_evidence_notes="Verified UK-UAE trade counterparty, direct settlement.",
+                    sanctions_hit=False),
+            4: dict(counterparty_type="unknown", counterparty_kyb_status="missing", counterparty_kyb_provider="none",
+                    route_type="private_relay", route_provider="Unknown", source_wallet_visibility="hidden",
+                    origin_tx_visibility="missing", destination_tx_visibility="missing",
+                    route_trace_completeness="opaque", route_provenance_confidence="low",
+                    route_evidence_notes="Sanctioned corridor (Russia) — counterparty verification never attempted.",
+                    sanctions_hit=True),
+            5: dict(counterparty_type="vendor", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
+                    route_type="direct", route_provider="Manual", source_wallet_visibility="visible",
+                    origin_tx_visibility="present", destination_tx_visibility="present",
+                    route_trace_completeness="full", route_provenance_confidence="high",
+                    route_evidence_notes="Verified payroll counterparty, full route evidence.",
+                    sanctions_hit=False),
+            # HEADLINE GOOD JOURNEY — verified liquidity provider, cross-chain
+            # swap with complete route evidence, low wallet-risk signal.
+            6: dict(counterparty_type="liquidity_provider", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
+                    counterparty_attestation_id="ATT-IN-SUPPLY-2201",
+                    route_type="chain_swap", route_provider="Relay", source_wallet_visibility="visible",
+                    origin_tx_visibility="present", destination_tx_visibility="present",
+                    route_trace_completeness="full", route_provenance_confidence="high",
+                    route_evidence_notes="Cross-chain settlement via Relay chain-swap; origin tx, destination tx, and quote reference all verified.",
+                    sanctions_hit=False),
+            7: dict(counterparty_type="treasury", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
+                    route_type="direct", route_provider="Manual", source_wallet_visibility="visible",
+                    origin_tx_visibility="present", destination_tx_visibility="present",
+                    route_trace_completeness="full", route_provenance_confidence="high",
+                    route_evidence_notes="Verified intercompany treasury desk, full route evidence.",
+                    sanctions_hit=False),
+            # HEADLINE BAD JOURNEY — unknown counterparty, failed/missing KYB,
+            # opaque private-relay route, sanctioned corridor.
+            8: dict(counterparty_type="unknown", counterparty_kyb_status="failed", counterparty_kyb_provider="none",
+                    route_type="private_relay", route_provider="Unknown", source_wallet_visibility="hidden",
+                    origin_tx_visibility="missing", destination_tx_visibility="missing",
+                    route_trace_completeness="opaque", route_provenance_confidence="low",
+                    route_evidence_notes="Source wallet hidden, relayer unknown, no quote/order id — only payout visible. Sanctioned corridor (Iran).",
+                    sanctions_hit=True),
+            9: dict(counterparty_type="vendor", counterparty_kyb_status="verified", counterparty_kyb_provider="beeceptor",
+                    route_type="direct", route_provider="Manual", source_wallet_visibility="visible",
+                    origin_tx_visibility="present", destination_tx_visibility="present",
+                    route_trace_completeness="full", route_provenance_confidence="high",
+                    route_evidence_notes="Small verified merchant settlement, full route evidence.",
+                    sanctions_hit=False),
+            # HEADLINE MEDIUM JOURNEY — liquidity provider, KYB pending,
+            # cross-chain private relay with partial provenance, no hard hit.
+            10: dict(counterparty_type="liquidity_provider", counterparty_kyb_status="pending", counterparty_kyb_provider="beeceptor",
+                     route_type="private_relay", route_provider="Relay", source_wallet_visibility="partial",
+                     origin_tx_visibility="missing", destination_tx_visibility="present",
+                     route_trace_completeness="partial", route_provenance_confidence="medium",
+                     route_evidence_notes="Destination transaction visible; origin wallet and relay route only partially traceable through a private relay.",
+                     sanctions_hit=False),
         }
 
         seeded_payments: list[PaymentIntent] = []
@@ -382,6 +464,24 @@ def seed_db():
             wallet_override = REAL_WALLET_OVERRIDES.get(i, {})
             sender_wallet = wallet_override.get("sender_wallet", f"0x{i:040x}")
             receiver_wallet = wallet_override.get("receiver_wallet", f"0x{i+100:040x}")
+            cp = COUNTERPARTY_OVERRIDES.get(i, {})
+            counterparty_fields = dict(
+                counterparty_name=receiver,
+                counterparty_type=cp.get("counterparty_type", "unknown"),
+                counterparty_wallet_address=receiver_wallet,
+                counterparty_chain=dst_chain,
+                counterparty_kyb_status=cp.get("counterparty_kyb_status", "missing"),
+                counterparty_kyb_provider=cp.get("counterparty_kyb_provider", "none"),
+                counterparty_attestation_id=cp.get("counterparty_attestation_id"),
+                route_type=cp.get("route_type", "unknown"),
+                route_provider=cp.get("route_provider", "Unknown"),
+                source_wallet_visibility=cp.get("source_wallet_visibility", "unknown"),
+                origin_tx_visibility=cp.get("origin_tx_visibility", "missing"),
+                destination_tx_visibility=cp.get("destination_tx_visibility", "missing"),
+                route_trace_completeness=cp.get("route_trace_completeness", "opaque"),
+                route_provenance_confidence=cp.get("route_provenance_confidence", "low"),
+                route_evidence_notes=cp.get("route_evidence_notes"),
+            )
             if not existing:
                 existing = PaymentIntent(
                     id=uuid.uuid4(),
@@ -401,6 +501,7 @@ def seed_db():
                     created_at=now - timedelta(days=max(0, 10 - i)),
                     updated_at=now - timedelta(hours=max(1, i)),
                     executed_at=(now - timedelta(hours=i)) if status == PaymentStatus.executed else None,
+                    **counterparty_fields,
                 )
                 db.add(existing)
                 db.commit()
@@ -410,16 +511,26 @@ def seed_db():
                 or existing.destination_chain != dst_chain
                 or existing.sender_wallet != sender_wallet
                 or existing.receiver_wallet != receiver_wallet
+                or existing.status != status
+                or existing.counterparty_type != counterparty_fields["counterparty_type"]
             ):
-                # Backfill chain/wallet corrections onto an already-seeded row
-                # (e.g. the Tron pivot) without touching its id or history.
+                # Backfill chain/wallet/counterparty corrections onto an
+                # already-seeded row without touching its id or history.
                 existing.source_chain = src_chain
                 existing.destination_chain = dst_chain
                 existing.sender_wallet = sender_wallet
                 existing.receiver_wallet = receiver_wallet
+                existing.status = status
+                for field_name, value in counterparty_fields.items():
+                    setattr(existing, field_name, value)
                 db.commit()
                 db.refresh(existing)
             seeded_payments.append(existing)
+
+            wallet_risk_score, wallet_overall_risk, wallet_mixer_adjacent = WALLET_RISK_OVERRIDES.get(i, (0.4, "medium", False))
+            wallet_risk_result = {"risk_score": wallet_risk_score, "overall_risk": wallet_overall_risk, "mixer_adjacent": wallet_mixer_adjacent}
+            compliance_stub = {"sanctions_hit": cp.get("sanctions_hit", False), "internal_blacklist_hit": False}
+            counterparty_risk_result = evaluate_counterparty(existing, wallet_risk_result, compliance_stub)
 
             existing_decision = db.query(ComplianceDecision).filter(ComplianceDecision.payment_id == existing.id).first()
             if not existing_decision:
@@ -428,7 +539,8 @@ def seed_db():
                         id=uuid.uuid4(),
                         payment_id=existing.id,
                         country_policy_result={"is_allowed": existing.status != PaymentStatus.blocked, "allowed": existing.status != PaymentStatus.blocked, "policy_version": "demo-policy-v9", "notes": f"Corridor {existing.source_country}->{existing.destination_country} evaluated", "exceeds_reporting_threshold": float(existing.amount) > 10000},
-                        wallet_risk_result={"risk_score": 0.15 if i in [1, 5, 9] else 0.74 if i in [6, 10] else 0.92 if i in [4, 8] else 0.4, "overall_risk": "low" if i in [1, 5, 9] else "high" if i in [6, 10] else "critical" if i in [4, 8] else "medium", "mixer_adjacent": i in [6, 10]},
+                        wallet_risk_result=wallet_risk_result,
+                        counterparty_risk_result=counterparty_risk_result,
                         issuer_risk_result={"token": existing.token, "risk_level": "low" if existing.token == "USDC" else "medium"},
                         chain_governance_result={"allowed": True, "bridge_trust_score": 0.87, "selected_chain": existing.destination_chain},
                         liquidity_result={"recommended_route": "direct" if ai_decision == "direct_transfer" else ai_decision, "estimated_cost_usd": 0.43},

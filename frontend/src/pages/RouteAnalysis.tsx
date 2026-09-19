@@ -5,7 +5,8 @@ import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ToastProvider';
 import { getStatusTone, type Tone } from '../components/StatusBadge';
 import { IcArrowRight, IcLock, IcAlertCircle } from '../components/scx/icons';
-import { MixerSignalPanel } from '../components/MixerSignalPanel';
+import { CounterpartyIntelligenceCard } from '../components/CounterpartyIntelligenceCard';
+import type { CounterpartyIntelligence } from '../types';
 
 interface PipelineStage { label: string; passed: boolean; status: string; detail: string }
 interface PaymentDetails {
@@ -17,6 +18,7 @@ interface PaymentDetails {
   amount?: number; token?: string; created_at?: string;
   pipeline_stages?: Record<string, PipelineStage>;
   compliance_decision?: { final_decision?: string; ai_decision?: string; ai_reasoning?: string } | null;
+  counterparty_intelligence?: CounterpartyIntelligence | null;
 }
 
 const SECTIONS: { title: string; layers: string[] }[] = [
@@ -222,9 +224,8 @@ export const RouteAnalysis: React.FC = () => {
 
       {view === 'trace' && payment && (
         <>
-          <div className="sec-label" style={{ marginTop: 18 }}>Compliance & Risk — Mixer Signal Intelligence</div>
-          <MixerSignalPanel address={payment.sender_wallet} chain={payment.source_chain} label="Sender wallet" />
-          <MixerSignalPanel address={payment.receiver_wallet} chain={payment.destination_chain} label="Receiver wallet" />
+          <div className="sec-label" style={{ marginTop: 18 }}>Compliance & Risk — Counterparty Intelligence</div>
+          <CounterpartyIntelligenceCard intel={payment.counterparty_intelligence} />
         </>
       )}
 

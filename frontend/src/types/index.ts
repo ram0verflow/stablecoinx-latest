@@ -407,6 +407,58 @@ export interface PolicyEvaluateResult {
   payment: Record<string, unknown>;
 }
 
+// ── Counterparty Intelligence ────────────────────────────────
+export type CounterpartyType = 'vendor' | 'liquidity_provider' | 'exchange' | 'treasury' | 'unknown';
+export type CounterpartyRiskLevel = 'low' | 'medium' | 'high';
+export type CounterpartyPolicyAction = 'approved' | 'enhanced_review' | 'blocked';
+
+export interface CounterpartyWalletIntelligence {
+  address: string | null;
+  chain: string | null;
+  score: number | null;
+  behavior_signal: string;
+  has_history: boolean;
+}
+
+export interface CounterpartyKyb {
+  status: string;
+  provider: string;
+  attestation_id: string | null;
+}
+
+export interface CounterpartyRouteTransparency {
+  route_type: string;
+  route_provider: string;
+  origin_chain: string | null;
+  destination_chain: string | null;
+  source_wallet_visibility: string;
+  origin_tx_hash: string | null;
+  destination_tx_hash: string | null;
+  quote_reference: string | null;
+  intermediate_contracts_known: boolean;
+  trace_completeness: string;
+  provenance_confidence: string;
+  transparency_score: number;
+  notes: string | null;
+}
+
+export interface CounterpartyIntelligence {
+  counterparty_name: string;
+  counterparty_type: CounterpartyType;
+  counterparty_type_label: string;
+  counterparty_wallet: string | null;
+  counterparty_wallet_configured: boolean;
+  chain: string | null;
+  wallet_intelligence: CounterpartyWalletIntelligence;
+  kyb: CounterpartyKyb;
+  route_transparency: CounterpartyRouteTransparency;
+  counterparty_risk_level: CounterpartyRiskLevel;
+  policy_action: CounterpartyPolicyAction;
+  reason: string;
+  evidence_summary: string;
+  missing_evidence_warnings: string[];
+}
+
 export interface MixerSignalResult {
   available: boolean;
   chain: string;

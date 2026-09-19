@@ -41,6 +41,7 @@ class ComplianceDecision(Base):
     treasury_controls_result = Column(JSON, nullable=True)  # FIXED: C4
     compliance_result = Column(JSON, nullable=True)  # FIXED: C4
     wallet_risk_result = Column(JSON, nullable=True)
+    counterparty_risk_result = Column(JSON, nullable=True)
     issuer_risk_result = Column(JSON, nullable=True)
     chain_governance_result = Column(JSON, nullable=True)
     liquidity_result = Column(JSON, nullable=True)
