@@ -3,13 +3,6 @@ import { mixerSignalsApi } from '../lib/api';
 import { ConfidenceGauge } from './ObfuscationCharts';
 import type { MixerSignalResult } from '../types';
 
-const TIER_TONE: Record<string, { color: string; bg: string; border: string }> = {
-  HIGH: { color: 'var(--green)', bg: 'var(--green-soft)', border: 'var(--green-line)' },
-  MEDIUM: { color: 'var(--cobalt)', bg: 'var(--cobalt-soft, var(--gray-soft))', border: 'var(--gray-line)' },
-  LOW: { color: 'var(--amber)', bg: 'var(--amber-soft)', border: 'var(--amber-line)' },
-  NONE: { color: 'var(--ink-faint)', bg: 'var(--gray-soft)', border: 'var(--gray-line)' },
-};
-
 function fmtSun(sun?: number | null): string | null {
   if (sun == null) return null;
   const trx = sun / 1e6;
@@ -90,7 +83,7 @@ export const MixerSignalPanel: React.FC<{ address?: string | null; chain?: strin
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
               {result.soft_signal && (
-                <ConfidenceGauge confidence={result.soft_signal.score / 100} tier={result.soft_signal.tier} />
+                <ConfidenceGauge confidence={result.soft_signal.score / 100} tier={result.soft_signal.tier} scheme="risk" />
               )}
               <div style={{ flex: 1, minWidth: 220 }}>
                 <div style={{ fontSize: 11, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>

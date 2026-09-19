@@ -8,11 +8,24 @@ const PROTOCOL_COLOR: Record<string, string> = {
   UNKNOWN: 'var(--ink-faint)',
 };
 
+// Classification-confidence semantics (Bitcoin CoinJoin classifier):
+// HIGH = clearly, confidently identified as a CoinJoin — green is correct
+// here, it's not a risk label.
 const TIER_COLOR: Record<string, string> = {
   HIGH: 'var(--green)',
   MEDIUM: 'var(--cobalt)',
   LOW: 'var(--amber)',
   NONE: 'var(--ink-faint)',
+};
+
+// Risk semantics (Mixer Signals soft_signal.tier): HIGH = most suspicious
+// heuristic patterns matched — the opposite meaning of the scale above, so
+// it needs its own inverted color mapping, not a reused green-for-HIGH.
+const RISK_TIER_COLOR: Record<string, string> = {
+  HIGH: 'var(--red)',
+  MEDIUM: 'var(--amber)',
+  LOW: 'var(--cobalt)',
+  NONE: 'var(--green)',
 };
 
 function fmtSats(sats: number): string {
@@ -21,14 +34,17 @@ function fmtSats(sats: number): string {
   return `${sats.toLocaleString()} sats`;
 }
 
-/** Circular SVG progress ring showing the confidence score. */
-export function ConfidenceGauge({ confidence, tier }: { confidence: number; tier: string }) {
+/** Circular SVG progress ring showing the confidence/risk score.
+ * scheme="confidence" (default): HIGH is green (classification-confidence).
+ * scheme="risk": HIGH is red (this tier means "most suspicious"). */
+export function ConfidenceGauge({ confidence, tier, scheme = 'confidence' }: { confidence: number; tier: string; scheme?: 'confidence' | 'risk' }) {
   const size = 116;
   const stroke = 10;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(1, confidence));
-  const color = TIER_COLOR[tier] || 'var(--ink-faint)';
+  const palette = scheme === 'risk' ? RISK_TIER_COLOR : TIER_COLOR;
+  const color = palette[tier] || 'var(--ink-faint)';
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flex: `0 0 ${size}px` }}>
