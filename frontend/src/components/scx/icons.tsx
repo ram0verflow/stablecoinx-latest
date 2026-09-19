@@ -55,7 +55,7 @@ export const IcChevronRight: React.FC<IconProps> = ({ className }) => (
 export const IcSelectChevron: React.FC<IconProps> = ({ className }) => (
   <svg className={className} viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="1.6" /></svg>
 );
-export const IcSearch: React.FC<IconProps> = ({ className }) => (
+export const IcSearch: React.FC<IconProps> = ({ className = 'ic' }) => (
   <svg className={className} viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.6" /><path d="M17 17l-3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
 );
 export const IcArrowRight: React.FC<IconProps> = ({ className }) => (
